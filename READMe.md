@@ -1,0 +1,196 @@
+# Permit AspNet
+
+Easily protect APIs with Permit.io via attributes!
+
+```csharp
+[Permit("read", "article")]
+public Article[] GetArticles()
+{
+    return new Article[] { ... };
+}
+
+[Permit("write", "article")]
+public Article[] GetArticles()
+{
+    return new Article[] { ... };
+}
+```
+
+## Getting Started
+
+* Install the package from `NuGet`
+* Configure the middleware:
+  ```csharp
+  var permitSection = builder.Configuration.GetSection("Permit");
+  builder.Services.AddPermit(permitSection);
+  
+  // Or directly
+  var permitOptions = new PermitOptions
+  {
+      ...
+  }
+  builder.Services.AddPermit(permitOptions);
+  ```
+* Enable the middleware:
+  ```csharp
+  app.UseAuthentication(); // Require by default
+  app.UseAuthorization();
+  
+  // Add this line
+  app.UsePermit();
+
+  app.MapControllers();
+  ```
+* Use the `Permit` to protect controllers or actions:
+  ```csharp
+  [Permit(action: "read", resourceType: "article")]
+  public Article[] GetArticles()
+  {
+      return new Article[] { ... };
+  }
+  ```
+  
+## How it works
+
+For each request, the middleware does:
+* Extract the user ID from the *JWT* token `NameIdentifier` claim (overridable)
+* Extract `action` and `resourceType` from the `Permit` attribute
+  * Multiple attributes are run sequentially. Controller first, then action
+* Use the `PermitSDK` to call the *PDP*
+* If the user is not allowed, a `403` is returned
+* If the user is allowed, the request is processed
+
+## Resource instances
+
+It's possible to specify a resource instance in the `Permit` attribute:
+
+```csharp
+[HttpGet("articles/{id}")]
+[Permit("read", "article", ResourceKeyFromRoute = "id")]
+public Article GetArticle([FromRoute] string id)
+{
+    ...
+}
+```
+
+There are many ways to specify the resource instance:
+
+| Property                  | Description                                |
+|---------------------------|--------------------------------------------| 
+| `ResourceKey`             | Static value                               |
+| `ResourceKeyFromRoute`    | From a route parameter                     | 
+| `ResourceKeyFromHeader`   | From a header                              |
+| `ResourceKeyFromBody`     | From the body. Nesting supported with dots |
+| `ResourceKeyProviderType` | Custom provider, explained below           |
+
+## Tenant
+
+The tenant can be specified with the `DefaultTenant` property in `PermitOptions`.
+
+For more granular control, the same options as resource instances are available:
+
+| Property             | Description                                |
+|----------------------|--------------------------------------------|
+| `Tenant`             | Static value                               |
+| `TenantFromRoute`    | From a route parameter                     |
+| `TenantFromHeader`   | From a header                              |
+| `TenantFromBody`     | From the body. Nesting supported with dots |
+| `TenantProviderType` | Custom provider, explained below           |
+
+## Permit providers
+
+Providers are classes that can extract specific information from the request.
+
+There are three types of providers for specific use cases
+* `IPermitValueProvider`: Extract a single value
+  * Used for *resource instance key*
+  * Used for *tenant*
+    ```csharp
+    ResourceKeyProviderType = typeof(MyCustomValueProvider)
+    TenantProviderType = typeof(MyCustomValueProvider)
+    ```
+* `IPermitValuesProvider`: Extract a dictionary
+  * Used for *attributes*
+  * Used for *context*
+    ```csharp
+    AttributesProviderType = typeof(MyCustomValuesProvider)
+    ContextProviderType = typeof(MyCustomValuesProvider)
+    ```
+* `IPermitUserKeyProvider`: Extract the user key
+
+### Example
+
+```csharp
+public class FakeUserKeyProvider: IPermitUserKeyProvider
+{
+    public Task<UserKey> GetUserKeyAsync(HttpContext httpContext)
+    {
+        return Task.FromResult(new UserKey("net@permit.io"));
+    }
+}
+```
+
+### Global providers
+
+To apply these providers for each request, there is a second argument in the `AddPermit` method:
+
+```csharp
+builder.Services.AddPermit(permitSection, providersConf =>
+    providersConf.WithGlobalUserKeyProvider<FakeUserKeyProvider>());
+```
+
+### Dependency injection
+
+Providers support *DI* out the box, just register the class in the *DI* container:
+
+```csharp
+// Provider
+public class RegionsContextProvider : IPermitValuesProvider
+{
+    private readonly IRegionsProvider _regionsProvider;
+
+    public RegionsContextProvider(IRegionsProvider regionsProvider)
+    {
+        _regionsProvider = regionsProvider;
+    }
+    
+    public Task<Dictionary<string, object>> GetValues(HttpContext httpContext)
+    {
+        return _regionsProvider.GetRegionsAsync();
+    }
+}
+
+// Registration
+builder.Services.AddSingleton<IRegionsProvider, RegionsProvider>();
+builder.Services.AddScoped<RegionsContextProvider>();
+```
+
+## Custom attributes
+
+The `Permit` attribute is not mandatory, you can create your own:
+
+```csharp
+// Custom attribute
+public class ProtectArticleAttribute : PermitAttribute
+{
+    public ProtectArticleAttribute(string action)
+      : base(action, "article",
+        ResourceKeyFromRoute = "id",
+        TenantFromHeader = "X-Org-Id") { }
+}
+
+// Usage
+[HttpGet("articles/{id}")]
+[ProtectArticle("read")]
+public Article GetArticle([FromRoute] string id)
+{
+    ...
+}
+
+[Route("articles/{id}")]
+[ProtectArticle("write")]
+public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
+{
+    ...
+}
+```
