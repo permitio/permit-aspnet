@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace PermitSDK.AspNet;
 
 /// <summary>
 /// Class to configure global providers
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class PermitProvidersOptionsConfiguration
 {
     private readonly PermitProvidersOptions _options;

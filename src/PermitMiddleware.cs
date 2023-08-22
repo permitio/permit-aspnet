@@ -22,7 +22,8 @@ public sealed class PermitMiddleware
     /// <param name="next">Request delegate</param>
     /// <param name="permitOptions">Permit SDK options</param>
     /// <param name="permitProvidersOptions">Function to configure global providers</param>
-    public PermitMiddleware(RequestDelegate next,
+    public PermitMiddleware(
+        RequestDelegate next,
         PermitOptions permitOptions,
         PermitProvidersOptions permitProvidersOptions)
     {

@@ -3,16 +3,18 @@
 Easily protect APIs with Permit.io via attributes!
 
 ```csharp
+[HttpGet("articles/{id}")]
 [Permit("read", "article")]
 public Article[] GetArticles()
 {
-    return new Article[] { ... };
+    ...
 }
 
+[HttpPost("articles/{id}")]
 [Permit("write", "article")]
-public Article[] GetArticles()
+public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
 {
-    return new Article[] { ... };
+    ...
 }
 ```
 
@@ -41,7 +43,7 @@ public Article[] GetArticles()
 
   app.MapControllers();
   ```
-* Use the `Permit` to protect controllers or actions:
+* Use the `Permit` attribute to protect controllers or actions:
   ```csharp
   [Permit(action: "read", resourceType: "article")]
   public Article[] GetArticles()
@@ -62,7 +64,7 @@ For each request, the middleware does:
 
 ## Resource instances
 
-It's possible to specify a resource instance in the `Permit` attribute:
+It's possible to specify a resource instance key in the `Permit` attribute:
 
 ```csharp
 [HttpGet("articles/{id}")]
@@ -187,7 +189,7 @@ public Article GetArticle([FromRoute] string id)
     ...
 }
 
-[Route("articles/{id}")]
+[HttpPost("articles/{id}")]
 [ProtectArticle("write")]
 public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
 {

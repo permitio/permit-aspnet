@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,7 @@ public static class PermitExtensions
     /// <param name="configurationSection">Configuration section for Permit SDK options</param>
     /// <param name="configureProviders">Function to configure global providers</param>
     /// <returns></returns>
+    [ExcludeFromCodeCoverage]
     public static IServiceCollection AddPermit(this IServiceCollection services,
         IConfigurationSection configurationSection,
         Action<PermitProvidersOptionsConfiguration>? configureProviders = null)
@@ -35,6 +37,7 @@ public static class PermitExtensions
     /// <param name="configureProviders">Function to configure global providers</param>
     /// <exception cref="ArgumentNullException"></exception>
     /// <returns></returns>
+    [ExcludeFromCodeCoverage]
     public static IServiceCollection AddPermit(this IServiceCollection services,
         PermitOptions options,
         Action<PermitProvidersOptionsConfiguration>? configureProviders = null)
@@ -55,6 +58,7 @@ public static class PermitExtensions
     /// </summary>
     /// <param name="applicationBuilder">Application builder</param>
     /// <returns></returns>
+    [ExcludeFromCodeCoverage]
     public static IApplicationBuilder UsePermit(
         this IApplicationBuilder applicationBuilder)
     {

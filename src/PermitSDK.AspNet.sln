@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PermitSDK.AspNet", "PermitSDK.AspNet.csproj", "{3385E61C-A023-49D3-90B0-E41EBB1062ED}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0E4FB5AE-14CD-4701-8813-D0AF5723D0AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PermitSDK.AspNet.Tests", "..\tests\PermitSDK.AspNet.Tests\PermitSDK.AspNet.Tests.csproj", "{A57C9534-0751-4700-B7B8-E86140B99BA6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{63BD9E9D-D346-4679-B4EE-8B5BE25D2EE2}"
+	ProjectSection(SolutionItems) = preProject
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3385E61C-A023-49D3-90B0-E41EBB1062ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3385E61C-A023-49D3-90B0-E41EBB1062ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3385E61C-A023-49D3-90B0-E41EBB1062ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3385E61C-A023-49D3-90B0-E41EBB1062ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A57C9534-0751-4700-B7B8-E86140B99BA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A57C9534-0751-4700-B7B8-E86140B99BA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A57C9534-0751-4700-B7B8-E86140B99BA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A57C9534-0751-4700-B7B8-E86140B99BA6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A57C9534-0751-4700-B7B8-E86140B99BA6} = {0E4FB5AE-14CD-4701-8813-D0AF5723D0AB}
+	EndGlobalSection
+EndGlobal
