@@ -67,9 +67,10 @@ public static class PermitExtensions
         {
             throw new InvalidOperationException("Permit middleware not registered.");
         }
-        
+
+        IPermitProxy permitProxy = new PermitProxy(serviceOptions.Options);
         return applicationBuilder.UseMiddleware<PermitMiddleware>(
-            serviceOptions.Options, serviceOptions.ProvidersOptions);
+            permitProxy, serviceOptions.ProvidersOptions);
     }
     
     internal static Task<UserKey?> GetProviderUserKey(this IServiceProvider serviceProvider,

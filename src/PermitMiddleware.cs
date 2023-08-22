@@ -12,7 +12,7 @@ namespace PermitSDK.AspNet;
 /// </summary>
 public sealed class PermitMiddleware
 {
-    private readonly Permit _permit;
+    private readonly IPermitProxy _permit;
     private readonly RequestDelegate _next;
     private readonly PermitProvidersOptions _permitProvidersOptions;
 
@@ -20,25 +20,17 @@ public sealed class PermitMiddleware
     /// Constructor
     /// </summary>
     /// <param name="next">Request delegate</param>
-    /// <param name="permitOptions">Permit SDK options</param>
+    /// <param name="permit">Permit SDK instance</param>
     /// <param name="permitProvidersOptions">Function to configure global providers</param>
     public PermitMiddleware(
         RequestDelegate next,
-        PermitOptions permitOptions,
+        IPermitProxy permit,
         PermitProvidersOptions permitProvidersOptions)
     {
         _next = next;
+        _permit = permit;
         _permitProvidersOptions = permitProvidersOptions;
-        _permit = new Permit(
-            permitOptions.ApiKey,
-            permitOptions.PDP,
-            permitOptions.DefaultTenant,
-            permitOptions.UseDefaultTenantIfEmpty,
-            permitOptions.DebugMode,
-            permitOptions.ApiUrl,
-            permitOptions.Level,
-            permitOptions.Label,
-            permitOptions.LogAsJson);
+        
     }
     
     /// <summary>
@@ -118,6 +110,6 @@ public sealed class PermitMiddleware
         var resourceInput = await permitRequestHandler.BuildAsync();
         
         // Call PDP
-        return await _permit.Check(userKey, attribute.Action, resourceInput);
+        return await _permit.CheckAsync(userKey, attribute.Action, resourceInput!);
     }
 }
