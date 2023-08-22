@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Moq;
 using PermitSDK.AspNet.Tests.Mock;
+using PermitSDK.Models;
 
 namespace PermitSDK.AspNet.Tests;
 
@@ -60,9 +61,53 @@ public class PermitMiddlewareTests
         Assert.Equal(200, httpContext.Response.StatusCode);
     }
     
-    private static HttpContext GetContextWithControllerAttributes(params PermitAttribute[] attributes)
+    [Fact]
+    public async Task ActionOnResource_Ok()
     {
-        return GetContext(controllerAttributes: attributes);
+        // Arrange
+        var permitProxyMock = new Mock<IPermitProxy>();
+        var middleware = new PermitMiddleware(Success,
+            permitProxyMock.Object,
+            new PermitProvidersOptions());
+        
+        var attribute = new PermitAttribute("read", "article");
+        var httpContext = GetContextWithControllerAttributes(attribute);
+        
+        permitProxyMock.Setup(m => m.CheckAsync(
+                It.IsAny<UserKey>(),
+                attribute.Action,
+                It.Is<ResourceInput>(input => input.type == "article"),null))
+            .ReturnsAsync(true);
+        
+        // Act
+        await middleware.InvokeAsync(httpContext, null!);
+
+        // Assert
+        Assert.Equal(200, httpContext.Response.StatusCode);
+    }
+    
+    [Fact]
+    public async Task ActionOnResource_403()
+    {
+        // Arrange
+        var permitProxyMock = new Mock<IPermitProxy>();
+        var middleware = new PermitMiddleware(Success,
+            permitProxyMock.Object,
+            new PermitProvidersOptions());
+        
+        var attribute = new PermitAttribute("read", "article");
+        var httpContext = GetContextWithControllerAttributes(attribute);
+        
+        // Act
+        await middleware.InvokeAsync(httpContext, null!);
+
+        // Assert
+        Assert.Equal(403, httpContext.Response.StatusCode);
+    }
+
+    private static HttpContext GetContextWithControllerAttributes(PermitAttribute attribute)
+    {
+        return GetContext(controllerAttributes: new[] { attribute });
     }
 
     private static HttpContext GetContext(
