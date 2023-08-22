@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Diagnostics;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Routing;
 using Moq;
+using PermitSDK.AspNet.Tests.Mock;
 
 namespace PermitSDK.AspNet.Tests;
 
@@ -30,6 +30,23 @@ public class PermitMiddlewareTests
     public async Task NoUserKey_Ok()
     {
         // Arrange
+        var httpContext = GetContext(withUser: false);
+        var permitProxyMock = new Mock<IPermitProxy>();
+        var middleware = new PermitMiddleware(Success,
+            permitProxyMock.Object,
+            new PermitProvidersOptions());
+
+        // Act
+        await middleware.InvokeAsync(httpContext, null!);
+
+        // Assert
+        Assert.Equal(200, httpContext.Response.StatusCode);
+    }
+    
+    [Fact]
+    public async Task NoAttributes_Ok()
+    {
+        // Arrange
         var httpContext = GetContext();
         var permitProxyMock = new Mock<IPermitProxy>();
         var middleware = new PermitMiddleware(Success,
@@ -42,13 +59,23 @@ public class PermitMiddlewareTests
         // Assert
         Assert.Equal(200, httpContext.Response.StatusCode);
     }
+    
+    private static HttpContext GetContextWithControllerAttributes(params PermitAttribute[] attributes)
+    {
+        return GetContext(controllerAttributes: attributes);
+    }
 
-    private static HttpContext GetContext()
+    private static HttpContext GetContext(
+        bool withUser = true,
+        PermitAttribute[]? controllerAttributes = null,
+        PermitAttribute[]? actionAttributes = null)
     {
         var actionDescriptor = new ControllerActionDescriptor
         {
             ControllerName = "MockedController",
-            ActionName = "MockedAction"
+            ActionName = "MockedAction",
+            ControllerTypeInfo = new FakeTypeInfo(controllerAttributes ?? Array.Empty<PermitAttribute>()),
+            MethodInfo = new FakeMethodInfo(actionAttributes ?? Array.Empty<PermitAttribute>())
         };
 
         var metadata = new EndpointMetadataCollection(actionDescriptor);
@@ -73,6 +100,18 @@ public class PermitMiddlewareTests
         {
             Response = { StatusCode = 500 }
         };
+
+        if (!withUser)
+        {
+            return httpContext;
+        }
+        
+        var claims = new List<Claim>
+        { 
+            new(ClaimTypes.NameIdentifier, "bob")
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        httpContext.User = new ClaimsPrincipal(identity);
         return httpContext;
     }
     
@@ -85,6 +124,5 @@ public class PermitMiddlewareTests
     private class EndpointFeature : IEndpointFeature
     {
         public Endpoint? Endpoint { get; set; }
-        public RouteValueDictionary? RouteValues { get; set; }
     }
 }
