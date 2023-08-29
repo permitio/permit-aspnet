@@ -48,7 +48,7 @@ public static class PermitExtensions
         }
         
         var providersOptions = new PermitProvidersOptions();
-        configureProviders?.Invoke(new PermitProvidersOptionsConfiguration(providersOptions));
+        configureProviders?.Invoke(new PermitProvidersOptionsConfiguration(providersOptions));        
         var serviceOptions = new PermitServiceOptions(options, providersOptions);
         return services.AddSingleton(serviceOptions);
     }
@@ -68,9 +68,13 @@ public static class PermitExtensions
             throw new InvalidOperationException("Permit middleware not registered.");
         }
 
+
+        IResourceInputBuilder resourceInputBuilder = new ResourceInputBuilder(
+            serviceOptions.ProvidersOptions, applicationBuilder.ApplicationServices);
+
         IPermitProxy permitProxy = new PermitProxy(serviceOptions.Options);
         return applicationBuilder.UseMiddleware<PermitMiddleware>(
-            permitProxy, serviceOptions.ProvidersOptions);
+            permitProxy, resourceInputBuilder, serviceOptions.ProvidersOptions);
     }
     
     internal static Task<UserKey?> GetProviderUserKey(this IServiceProvider serviceProvider,

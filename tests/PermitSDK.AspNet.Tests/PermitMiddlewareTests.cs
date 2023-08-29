@@ -16,8 +16,10 @@ public class PermitMiddlewareTests
         // Arrange
         var httpContext = new DefaultHttpContext();
         var permitProxyMock = new Mock<IPermitProxy>();
+        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
         var middleware = new PermitMiddleware(Success,
             permitProxyMock.Object,
+            resourceInputBuilderMock.Object,
             new PermitProvidersOptions());
 
         // Act
@@ -33,8 +35,10 @@ public class PermitMiddlewareTests
         // Arrange
         var httpContext = GetContext(withUser: false);
         var permitProxyMock = new Mock<IPermitProxy>();
+        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
         var middleware = new PermitMiddleware(Success,
             permitProxyMock.Object,
+            resourceInputBuilderMock.Object,
             new PermitProvidersOptions());
 
         // Act
@@ -50,8 +54,10 @@ public class PermitMiddlewareTests
         // Arrange
         var httpContext = GetContext();
         var permitProxyMock = new Mock<IPermitProxy>();
+        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
         var middleware = new PermitMiddleware(Success,
             permitProxyMock.Object,
+            resourceInputBuilderMock.Object,
             new PermitProvidersOptions());
 
         // Act
@@ -66,8 +72,10 @@ public class PermitMiddlewareTests
     {
         // Arrange
         var permitProxyMock = new Mock<IPermitProxy>();
+        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
         var middleware = new PermitMiddleware(Success,
             permitProxyMock.Object,
+            resourceInputBuilderMock.Object,
             new PermitProvidersOptions());
         
         var attribute = new PermitAttribute("read", "article");
@@ -78,6 +86,8 @@ public class PermitMiddlewareTests
                 attribute.Action,
                 It.Is<ResourceInput>(input => input.type == "article"),null))
             .ReturnsAsync(true);
+        resourceInputBuilderMock.Setup(m => m.BuildAsync(attribute, httpContext))
+            .ReturnsAsync(new ResourceInput(attribute.ResourceType));
         
         // Act
         await middleware.InvokeAsync(httpContext, null!);
@@ -91,8 +101,10 @@ public class PermitMiddlewareTests
     {
         // Arrange
         var permitProxyMock = new Mock<IPermitProxy>();
+        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
         var middleware = new PermitMiddleware(Success,
             permitProxyMock.Object,
+            resourceInputBuilderMock.Object,
             new PermitProvidersOptions());
         
         var attribute = new PermitAttribute("read", "article");

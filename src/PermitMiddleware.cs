@@ -14,6 +14,7 @@ public sealed class PermitMiddleware
 {
     private readonly IPermitProxy _permit;
     private readonly RequestDelegate _next;
+    private readonly IResourceInputBuilder _resourceInputBuilder;
     private readonly PermitProvidersOptions _permitProvidersOptions;
 
     /// <summary>
@@ -21,16 +22,18 @@ public sealed class PermitMiddleware
     /// </summary>
     /// <param name="next">Request delegate</param>
     /// <param name="permit">Permit SDK instance</param>
+    /// <param name="resourceInputBuilder">Builder for resource input</param>
     /// <param name="permitProvidersOptions">Function to configure global providers</param>
     public PermitMiddleware(
         RequestDelegate next,
         IPermitProxy permit,
+        IResourceInputBuilder resourceInputBuilder,
         PermitProvidersOptions permitProvidersOptions)
     {
         _next = next;
         _permit = permit;
-        _permitProvidersOptions = permitProvidersOptions;
-        
+        _resourceInputBuilder = resourceInputBuilder;
+        _permitProvidersOptions = permitProvidersOptions;        
     }
     
     /// <summary>
@@ -64,7 +67,7 @@ public sealed class PermitMiddleware
         var attributes = controllerAttributes.Concat(actionAttributes).ToArray();
         foreach (var attribute in attributes)
         {
-            var controllerPermitted = await IsAuthorizedAsync(httpContext, serviceProvider, attribute, userKey);
+            var controllerPermitted = await IsAuthorizedAsync(httpContext, attribute, userKey);
             if (!controllerPermitted)
             {
                 httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
@@ -95,19 +98,14 @@ public sealed class PermitMiddleware
     }
 
     private async Task<bool> IsAuthorizedAsync(HttpContext httpContext,
-        IServiceProvider serviceProvider, PermitAttribute attribute, UserKey userKey)
+        PermitAttribute attribute, UserKey userKey)
     {
         if (string.IsNullOrWhiteSpace(attribute.ResourceType))
         {
             return false;
         }
 
-        var permitRequestHandler = new ResourceInputBuilder(
-            _permitProvidersOptions,
-            httpContext,
-            serviceProvider,
-            attribute);
-        var resourceInput = await permitRequestHandler.BuildAsync();
+        var resourceInput = await _resourceInputBuilder.BuildAsync(attribute, httpContext);
         
         // Call PDP
         return await _permit.CheckAsync(userKey, attribute.Action, resourceInput!);
