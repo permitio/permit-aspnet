@@ -1,10 +1,14 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace PermitSDK.AspNet;
 
+[ExcludeFromCodeCoverage]
 internal record PermitServiceOptions(PermitOptions Options, PermitProvidersOptions ProvidersOptions);
 
 /// <summary>
 /// Permit SDK options
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class PermitOptions
 {
     /// <summary>

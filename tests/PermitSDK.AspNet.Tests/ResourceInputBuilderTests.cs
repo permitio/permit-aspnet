@@ -14,6 +14,14 @@ public class ResourceInputBuilderTests
     private const string TestType = "testType";
     private const string TestResourceKey = "testKey";
     private const string TestTenant = "testTenant";
+    private static readonly Dictionary<string, object> TestAttributes = new()
+    {
+        { "testAttrKey", "testAttrValue" }
+    };
+    private static readonly Dictionary<string, object> TestContext = new()
+    {
+        { "testCxtKey", "testCtxValue" }
+    };
 
     #region ResourceKey
 
@@ -430,6 +438,192 @@ public class ResourceInputBuilderTests
         public Task<string> GetValueAsync(HttpContext httpContext)
         {
             return _provider.GetValueAsync(httpContext);
+        }
+    }
+
+    #endregion
+
+    #region Attributes
+
+    [Fact]
+    public async Task Attributes_Provider()
+    {
+        // Arrange
+        var builder = GetBuilder();
+        var attribute = new PermitAttribute(TestAction, TestType)
+        {
+            AttributesProviderType = typeof(AttributesProvider)
+        };
+        var httpContext = new DefaultHttpContext();
+        
+        // Act
+        var result = await builder.BuildAsync(attribute, httpContext);
+        
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(TestType, result.type);
+        Assert.Equal(TestAttributes, result.attributes);
+    }
+    
+    [Fact]
+    public async Task Attributes_Provider_DependencyInjection()
+    {
+        // Arrange
+        var builder = GetBuilder(servicesAction: services => services
+            .AddSingleton<AttributesProvider>()
+            .AddSingleton<AttributesProviderDi>());
+        var attribute = new PermitAttribute(TestAction, TestType)
+        {
+            AttributesProviderType = typeof(AttributesProviderDi)
+        };
+        var httpContext = new DefaultHttpContext();
+        
+        // Act
+        var result = await builder.BuildAsync(attribute, httpContext);
+        
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(TestType, result.type);
+        Assert.Equal(TestAttributes, result.attributes);
+    }
+    
+    [Fact]
+    public async Task Attributes_Provider_Global()
+    {
+        // Arrange
+        var builder = GetBuilder(
+            options: new PermitProvidersOptions
+            {
+                GlobalAttributesProviderType = typeof(AttributesProviderDi)
+            },
+            services => services
+                .AddSingleton<AttributesProvider>()
+                .AddSingleton<AttributesProviderDi>());
+        var attribute = new PermitAttribute(TestAction, TestType);
+        var httpContext = new DefaultHttpContext();
+        
+        // Act
+        var result = await builder.BuildAsync(attribute, httpContext);
+        
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(TestType, result.type);
+        Assert.Equal(TestAttributes, result.attributes);
+    }
+
+    private class AttributesProvider : IPermitValuesProvider
+    {
+        public Task<Dictionary<string, object>> GetValues(HttpContext httpContext)
+        {
+            return Task.FromResult(TestAttributes);
+        }
+    }
+    
+    private class AttributesProviderDi : IPermitValuesProvider
+    {
+        private readonly AttributesProvider _provider;
+
+        public AttributesProviderDi(AttributesProvider provider)
+        {
+            _provider = provider;
+        }
+
+        public Task<Dictionary<string, object>> GetValues(HttpContext httpContext)
+        {
+            return _provider.GetValues(httpContext);
+        }
+    }
+
+    #endregion
+    
+    #region Context
+
+    [Fact]
+    public async Task Context_Provider()
+    {
+        // Arrange
+        var builder = GetBuilder();
+        var attribute = new PermitAttribute(TestAction, TestType)
+        {
+            ContextProviderType = typeof(ContextProvider)
+        };
+        var httpContext = new DefaultHttpContext();
+        
+        // Act
+        var result = await builder.BuildAsync(attribute, httpContext);
+        
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(TestType, result.type);
+        Assert.Equal(TestContext, result.context);
+    }
+    
+    [Fact]
+    public async Task Context_Provider_DependencyInjection()
+    {
+        // Arrange
+        var builder = GetBuilder(servicesAction: services => services
+            .AddSingleton<ContextProvider>()
+            .AddSingleton<ContextProviderDi>());
+        var attribute = new PermitAttribute(TestAction, TestType)
+        {
+            ContextProviderType = typeof(ContextProviderDi)
+        };
+        var httpContext = new DefaultHttpContext();
+        
+        // Act
+        var result = await builder.BuildAsync(attribute, httpContext);
+        
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(TestType, result.type);
+        Assert.Equal(TestContext, result.context);
+    }
+    
+    [Fact]
+    public async Task Context_Provider_Global()
+    {
+        // Arrange
+        var builder = GetBuilder(
+            options: new PermitProvidersOptions
+            {
+                GlobalContextProviderType = typeof(ContextProviderDi)
+            },
+            services => services
+                .AddSingleton<ContextProvider>()
+                .AddSingleton<ContextProviderDi>());
+        var attribute = new PermitAttribute(TestAction, TestType);
+        var httpContext = new DefaultHttpContext();
+        
+        // Act
+        var result = await builder.BuildAsync(attribute, httpContext);
+        
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(TestType, result.type);
+        Assert.Equal(TestContext, result.context);
+    }
+
+    private class ContextProvider : IPermitValuesProvider
+    {
+        public Task<Dictionary<string, object>> GetValues(HttpContext httpContext)
+        {
+            return Task.FromResult(TestContext);
+        }
+    }
+    
+    private class ContextProviderDi : IPermitValuesProvider
+    {
+        private readonly ContextProvider _provider;
+
+        public ContextProviderDi(ContextProvider provider)
+        {
+            _provider = provider;
+        }
+
+        public Task<Dictionary<string, object>> GetValues(HttpContext httpContext)
+        {
+            return _provider.GetValues(httpContext);
         }
     }
 

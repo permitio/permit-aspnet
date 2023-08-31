@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using PermitSDK.Models;
 
 namespace PermitSDK.AspNet;
 
 /// <inheritdoc/>
+[ExcludeFromCodeCoverage]
 public class PermitProxy: IPermitProxy
 {
     private readonly Permit _permit;

@@ -10,6 +10,8 @@ namespace PermitSDK.AspNet.Tests;
 
 public class PermitMiddlewareTests
 {
+    private const string TestUserKey = "testUserKey";
+    
     [Fact]
     public async Task NoActionDescriptor_Ok()
     {
@@ -68,6 +70,27 @@ public class PermitMiddlewareTests
     }
     
     [Fact]
+    public async Task ActionOnResource_403()
+    {
+        // Arrange
+        var permitProxyMock = new Mock<IPermitProxy>();
+        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
+        var middleware = new PermitMiddleware(Success,
+            permitProxyMock.Object,
+            resourceInputBuilderMock.Object,
+            new PermitProvidersOptions());
+        
+        var attribute = new PermitAttribute("read", "article");
+        var httpContext = GetContextWithControllerAttributes(attribute);
+        
+        // Act
+        await middleware.InvokeAsync(httpContext, null!);
+
+        // Assert
+        Assert.Equal(403, httpContext.Response.StatusCode);
+    }
+    
+    [Fact]
     public async Task ActionOnResource_Ok()
     {
         // Arrange
@@ -97,7 +120,7 @@ public class PermitMiddlewareTests
     }
     
     [Fact]
-    public async Task ActionOnResource_403()
+    public async Task ActionOnResource_Ok_UserKeyProvider()
     {
         // Arrange
         var permitProxyMock = new Mock<IPermitProxy>();
@@ -105,16 +128,27 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             permitProxyMock.Object,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions());
+            new PermitProvidersOptions
+            {
+                GlobalUserKeyProviderType = typeof(TestUserKeyProvider)
+            });
         
         var attribute = new PermitAttribute("read", "article");
         var httpContext = GetContextWithControllerAttributes(attribute);
+        
+        permitProxyMock.Setup(m => m.CheckAsync(
+                It.IsAny<UserKey>(),
+                attribute.Action,
+                It.Is<ResourceInput>(input => input.type == "article"),null))
+            .ReturnsAsync(true);
+        resourceInputBuilderMock.Setup(m => m.BuildAsync(attribute, httpContext))
+            .ReturnsAsync(new ResourceInput(attribute.ResourceType));
         
         // Act
         await middleware.InvokeAsync(httpContext, null!);
 
         // Assert
-        Assert.Equal(403, httpContext.Response.StatusCode);
+        Assert.Equal(200, httpContext.Response.StatusCode);
     }
 
     private static HttpContext GetContextWithControllerAttributes(PermitAttribute attribute)
@@ -181,5 +215,13 @@ public class PermitMiddlewareTests
     private class EndpointFeature : IEndpointFeature
     {
         public Endpoint? Endpoint { get; set; }
+    }
+    
+    private class TestUserKeyProvider: IPermitUserKeyProvider
+    {
+        public Task<UserKey> GetUserKeyAsync(HttpContext httpContext)
+        {
+            return Task.FromResult(new UserKey(TestUserKey));
+        }
     }
 }
