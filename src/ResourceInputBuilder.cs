@@ -109,13 +109,13 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
             if (!string.IsNullOrWhiteSpace(fromHeader))
             {
-                var value = await GetValueFromBody(fromHeader);
+                var value = GetValueFromHeader(fromHeader);
                 return (true, value);
             }
 
             if (!string.IsNullOrWhiteSpace(fromBody))
             {
-                return (true, GetValueFromHeader(fromBody));
+                return (true, await GetValueFromBody(fromBody));
             }
 
             if (providerType != null)
