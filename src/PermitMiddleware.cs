@@ -3,7 +3,8 @@ using System.Reflection;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using PermitSDK.Models;
+using PermitSDK.AspNet.PdpClient;
+using PermitSDK.AspNet.PdpClient.Models;
 
 namespace PermitSDK.AspNet;
 
@@ -12,8 +13,8 @@ namespace PermitSDK.AspNet;
 /// </summary>
 public sealed class PermitMiddleware
 {
-    private readonly IPermitProxy _permit;
     private readonly RequestDelegate _next;
+    private readonly PdpService _pdpService;
     private readonly IResourceInputBuilder _resourceInputBuilder;
     private readonly PermitProvidersOptions _permitProvidersOptions;
 
@@ -21,17 +22,17 @@ public sealed class PermitMiddleware
     /// Constructor
     /// </summary>
     /// <param name="next">Request delegate</param>
-    /// <param name="permit">Permit SDK instance</param>
+    /// <param name="pdpService">Service to call PDP endpoints</param>
     /// <param name="resourceInputBuilder">Builder for resource input</param>
     /// <param name="permitProvidersOptions">Function to configure global providers</param>
     public PermitMiddleware(
         RequestDelegate next,
-        IPermitProxy permit,
+        PdpService pdpService, 
         IResourceInputBuilder resourceInputBuilder,
         PermitProvidersOptions permitProvidersOptions)
     {
         _next = next;
-        _permit = permit;
+        _pdpService = pdpService;
         _resourceInputBuilder = resourceInputBuilder;
         _permitProvidersOptions = permitProvidersOptions;        
     }
@@ -108,6 +109,6 @@ public sealed class PermitMiddleware
         var resourceInput = await _resourceInputBuilder.BuildAsync(attribute, httpContext);
         
         // Call PDP
-        return await _permit.CheckAsync(userKey, attribute.Action, resourceInput!);
+        return await _pdpService.AllowAsync(userKey, attribute.Action, resourceInput!);
     }
 }

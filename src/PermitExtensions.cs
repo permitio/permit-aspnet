@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PermitSDK.Models;
+using PermitSDK.AspNet.PdpClient;
+using PermitSDK.AspNet.PdpClient.Models;
 
 namespace PermitSDK.AspNet;
 
@@ -50,7 +51,15 @@ public static class PermitExtensions
         var providersOptions = new PermitProvidersOptions();
         configureProviders?.Invoke(new PermitProvidersOptionsConfiguration(providersOptions));        
         var serviceOptions = new PermitServiceOptions(options, providersOptions);
-        return services.AddSingleton(serviceOptions);
+        services
+            .AddSingleton(serviceOptions)
+            .AddHttpClient<PdpService>(client =>
+            {
+                client.BaseAddress = new Uri(options.PDP);
+                client.DefaultRequestHeaders.Add("authorization", options.ApiKey);
+                client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
+            });
+        return services;
     }
 
     /// <summary>
@@ -69,12 +78,12 @@ public static class PermitExtensions
         }
 
 
+        var pdp = applicationBuilder.ApplicationServices.GetService<PdpService>();
         IResourceInputBuilder resourceInputBuilder = new ResourceInputBuilder(
             serviceOptions.ProvidersOptions, applicationBuilder.ApplicationServices);
 
-        IPermitProxy permitProxy = new PermitProxy(serviceOptions.Options);
         return applicationBuilder.UseMiddleware<PermitMiddleware>(
-            permitProxy, resourceInputBuilder, serviceOptions.ProvidersOptions);
+            pdp, resourceInputBuilder, serviceOptions.ProvidersOptions);
     }
     
     internal static Task<UserKey?> GetProviderUserKey(this IServiceProvider serviceProvider,

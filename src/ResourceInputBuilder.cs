@@ -1,8 +1,7 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using PermitSDK.Models;
+using PermitSDK.AspNet.PdpClient.Models;
 
 namespace PermitSDK.AspNet;
 
@@ -191,9 +190,39 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 requestBody = await reader.ReadToEndAsync();
             }
 
-            var jsonObject = JsonConvert.DeserializeObject<JObject>(requestBody);
-            var propertyValue = jsonObject?.SelectToken(jsonPropertyPath);
-            return propertyValue?.ToString();
+            var jsonDocument = JsonDocument.Parse(requestBody);
+            var node = GetJsonElement(jsonDocument.RootElement, jsonPropertyPath);
+            return GetJsonElementValue(node);
         }
+        
+        static JsonElement GetJsonElement(JsonElement jsonElement, string path)
+        {
+            if (jsonElement.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+            {
+                return default;
+            }
+
+            var segments = path.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var t in segments)
+            {
+                jsonElement = jsonElement.TryGetProperty(t, out var value) ? value : default;
+
+                if (jsonElement.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                {
+                    return default;
+                }
+            }
+
+            return jsonElement;
+        }
+        
+        static string? GetJsonElementValue(JsonElement jsonElement)
+        {
+            return
+                jsonElement.ValueKind != JsonValueKind.Null &&
+                jsonElement.ValueKind != JsonValueKind.Undefined ?
+                    jsonElement.ToString() :
+                    default;
+        } 
     }
 }

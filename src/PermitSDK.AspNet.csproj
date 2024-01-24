@@ -12,9 +12,5 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <PackageReference Include="Permit" Version="1.1.2" />
-    </ItemGroup>
 
 </Project>

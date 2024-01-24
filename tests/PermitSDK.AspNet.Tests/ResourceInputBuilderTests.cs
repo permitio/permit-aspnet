@@ -41,8 +41,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
 
     [Fact]
@@ -71,8 +71,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
@@ -101,8 +101,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
@@ -138,8 +138,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
@@ -158,8 +158,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
@@ -180,8 +180,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
@@ -204,8 +204,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
 
     private class ResourceKeyProvider : IPermitValueProvider
@@ -251,8 +251,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
 
     [Fact]
@@ -281,8 +281,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
@@ -311,8 +311,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
@@ -348,8 +348,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
@@ -368,8 +368,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
@@ -390,8 +390,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
@@ -414,8 +414,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
 
     private class TenantProvider : IPermitValueProvider
@@ -461,8 +461,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestAttributes, result.attributes);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestAttributes, result.Attributes);
     }
     
     [Fact]
@@ -483,8 +483,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestAttributes, result.attributes);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestAttributes, result.Attributes);
     }
     
     [Fact]
@@ -507,8 +507,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestAttributes, result.attributes);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestAttributes, result.Attributes);
     }
 
     private class AttributesProvider : IPermitValuesProvider
@@ -554,8 +554,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestContext, result.context);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestContext, result.Context);
     }
     
     [Fact]
@@ -576,8 +576,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestContext, result.context);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestContext, result.Context);
     }
     
     [Fact]
@@ -600,8 +600,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestContext, result.context);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestContext, result.Context);
     }
 
     private class ContextProvider : IPermitValuesProvider

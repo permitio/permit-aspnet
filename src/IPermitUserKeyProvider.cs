@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using PermitSDK.Models;
+using PermitSDK.AspNet.PdpClient.Models;
 
 namespace PermitSDK.AspNet;
 
