@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.Extensions.Logging;
 
 namespace PermitSDK.AspNet;
 
@@ -9,6 +8,7 @@ internal record PermitServiceOptions(PermitOptions Options, PermitProvidersOptio
 /// <summary>
 /// Permit SDK options
 /// </summary>
+[Serializable]
 [ExcludeFromCodeCoverage]
 public class PermitOptions
 {
@@ -21,14 +21,4 @@ public class PermitOptions
     /// The URL of the PDP
     /// </summary>
     public string PDP { get; set; } = "http://localhost:7766";
-    
-    /// <summary>
-    /// Enable debug mode to get more information about the request
-    /// </summary>
-    public bool DebugMode { get; set; } = false;
-
-    /// <summary>
-    /// The log level
-    /// </summary>
-    public LogLevel Level { get; set; } = LogLevel.Information;
 }

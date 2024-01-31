@@ -4,7 +4,7 @@
 /// Attribute to decorate controllers and actions with Permit permissions.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
-public class PermitAttribute : Attribute
+public class PermitAttribute : Attribute, IPermitData
 {
     /// <summary>
     /// Create a Permit attribute.
@@ -17,75 +17,45 @@ public class PermitAttribute : Attribute
         ResourceType = resourceType;
     }
 
-    /// <summary>
-    /// Get the key of the resource action
-    /// </summary>
-    public string Action { get; }
+    /// <inheritdoc />
+    public string Action { get; init; }
     
-    /// <summary>
-    /// Get the key of the resource type
-    /// </summary>
+    /// <inheritdoc />
     public string ResourceType { get; }
     
-    /// <summary>
-    /// Get or set tenant to use for the authorization.
-    /// </summary>
+    /// <inheritdoc />
     public string? Tenant { get; set; }
     
-    /// <summary>
-    /// Get or set the route parameter to use as tenant.
-    /// </summary>
+    /// <inheritdoc />
     public string? TenantFromRoute { get; set; }
     
-    /// <summary>
-    /// Get or set the header to use as tenant.
-    /// </summary>
+    /// <inheritdoc />
     public string? TenantFromHeader { get; set; }
     
-    /// <summary>
-    /// Get or set the property path to get the tenant
-    /// <example><code>tenant.key</code></example>
-    /// </summary>
+    /// <inheritdoc />
     public string? TenantFromBody { get; set; }
     
-    /// <summary>
-    /// Get or set the type of <see cref="IPermitValueProvider"/> to use to get the tenant
-    /// </summary>
+    /// <inheritdoc />
     public Type? TenantProviderType { get; set; }
     
-    /// <summary>
-    /// Get or set resource key to use for the authorization.
-    /// </summary>
+    /// <inheritdoc />
     public string? ResourceKey { get; set; }
     
-    /// <summary>
-    /// Get or set the route parameter to use as resource key.
-    /// </summary>
+    /// <inheritdoc />
     public string? ResourceKeyFromRoute { get; set; }
     
-    /// <summary>
-    /// Get or set the header to use as resource key.
-    /// </summary>
+    /// <inheritdoc />
     public string? ResourceKeyFromHeader { get; set; }
     
-    /// <summary>
-    /// Get or set the property path to get the resource key
-    /// <example><code>resource.key</code></example>
-    /// </summary>
+    /// <inheritdoc />
     public string? ResourceKeyFromBody { get; set; }
     
-    /// <summary>
-    /// Get or set the type of <see cref="IPermitValueProvider"/> to use to get the resource key
-    /// </summary>
+    /// <inheritdoc />
     public Type? ResourceKeyProviderType { get; set; }
     
-    /// <summary>
-    /// Get or set the type of <see cref="IPermitValuesProvider"/> to use to get the attributes
-    /// </summary>
+    /// <inheritdoc />
     public Type? AttributesProviderType { get; set; }
     
-    /// <summary>
-    /// Get or set the type of <see cref="IPermitValuesProvider"/> to use to get the context
-    /// </summary>
+    /// <inheritdoc />
     public Type? ContextProviderType { get; set; }
 }

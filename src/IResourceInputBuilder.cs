@@ -12,5 +12,5 @@ public interface IResourceInputBuilder
     /// Create the <see cref="ResourceInput"/> instance.
     /// </summary>
     /// <returns></returns>
-    Task<ResourceInput?> BuildAsync(PermitAttribute attribute, HttpContext httpContext);    
+    Task<ResourceInput?> BuildAsync(IPermitData data, HttpContext httpContext);    
 }

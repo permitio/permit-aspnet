@@ -10,7 +10,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
     private readonly PermitProvidersOptions _permitProvidersOptions;
     private bool _isFailed;
     private string? _resourceKey;
-    private string? _tenant;
+    private string _tenant = "default";
     private Dictionary<string, object>? _attributes;
     private Dictionary<string, object>? _context;
 
@@ -24,7 +24,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
         _serviceProvider = serviceProvider;
     }
 
-    public async Task<ResourceInput?> BuildAsync(PermitAttribute attribute, HttpContext httpContext)
+    public async Task<ResourceInput?> BuildAsync(IPermitData data, HttpContext httpContext)
     {
         await TryAppendResourceKeyAsync();
         await TryAppendTenantAsync();
@@ -37,7 +37,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
         }
 
         return new ResourceInput(
-            attribute.ResourceType,
+            data.ResourceType,
             _resourceKey,
             _tenant,
             _attributes,
@@ -46,11 +46,11 @@ internal class ResourceInputBuilder : IResourceInputBuilder
         async Task TryAppendResourceKeyAsync()
         {
             var (isSpecified, resourceKey) = await GetValueAsync(
-                attribute.ResourceKey,
-                attribute.ResourceKeyFromRoute,
-                attribute.ResourceKeyFromHeader,
-                attribute.ResourceKeyFromBody,
-                attribute.ResourceKeyProviderType,
+                data.ResourceKey,
+                data.ResourceKeyFromRoute,
+                data.ResourceKeyFromHeader,
+                data.ResourceKeyFromBody,
+                data.ResourceKeyProviderType,
                 _permitProvidersOptions.GlobalResourceKeyProviderType);
 
             if (isSpecified && resourceKey == null)
@@ -71,11 +71,11 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             }
 
             var (isSpecified, tenant) = await GetValueAsync(
-                attribute.Tenant,
-                attribute.TenantFromRoute,
-                attribute.TenantFromHeader,
-                attribute.TenantFromBody,
-                attribute.TenantProviderType,
+                data.Tenant,
+                data.TenantFromRoute,
+                data.TenantFromHeader,
+                data.TenantFromBody,
+                data.TenantProviderType,
                 _permitProvidersOptions.GlobalTenantProviderType);
 
             if (isSpecified && tenant == null)
@@ -134,12 +134,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
         async Task TryAppendAttributesAsync()
         {
-            if (_isFailed || (attribute.AttributesProviderType == null && _permitProvidersOptions.GlobalAttributesProviderType == null))
+            if (_isFailed || (data.AttributesProviderType == null && _permitProvidersOptions.GlobalAttributesProviderType == null))
             {
                 return;
             }
 
-            var providerType = attribute.AttributesProviderType ?? _permitProvidersOptions.GlobalAttributesProviderType;
+            var providerType = data.AttributesProviderType ?? _permitProvidersOptions.GlobalAttributesProviderType;
             var attributes = await _serviceProvider.GetProviderValues(httpContext, providerType!);
             if (attributes == null)
             {
@@ -153,12 +153,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
         async Task TryAppendContextAsync()
         {
-            if (_isFailed || (attribute.ContextProviderType == null && _permitProvidersOptions.GlobalContextProviderType == null))
+            if (_isFailed || (data.ContextProviderType == null && _permitProvidersOptions.GlobalContextProviderType == null))
             {
                 return;
             }
 
-            var providerType = attribute.ContextProviderType ?? _permitProvidersOptions.GlobalContextProviderType;
+            var providerType = data.ContextProviderType ?? _permitProvidersOptions.GlobalContextProviderType;
             var context = await _serviceProvider.GetProviderValues(httpContext, providerType!);
             if (context == null)
             {

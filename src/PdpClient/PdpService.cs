@@ -14,8 +14,7 @@ public sealed class PdpService: IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<PdpService> _logger;
-
-    internal static readonly JsonSerializerOptions SerializerOptions = new()
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
@@ -47,10 +46,16 @@ public sealed class PdpService: IDisposable
         if (httpResponse is { IsSuccessStatusCode: true, StatusCode: HttpStatusCode.OK })
         {
             var response = await DeserializeAsync<AllowedResponse>(httpResponse);
-            return response!.Allowed;
+            if (response?.Debug?.Rbac?.Reason != null)
+            {
+                _logger.LogTrace("RBAC reason: {Reason}", response.Debug.Rbac.Reason);
+            }
+            
+            return response!.Allow;
         }
 
-        _logger.LogError("Permit API returned {StatusCode}", httpResponse.StatusCode);
+        var errorMessage = await httpResponse.Content.ReadAsStringAsync();
+        _logger.LogError("Permit API returned {StatusCode}: {Message}", httpResponse.StatusCode, errorMessage);
         return false;
     }
 

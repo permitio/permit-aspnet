@@ -1,3 +1,10 @@
 namespace PermitSDK.AspNet.PdpClient.Models;
 
-internal record AllowedResponse(bool Allowed);
+[Serializable]
+internal record AllowedResponse(bool Allow, AllowedResponseDebug? Debug);
+
+[Serializable]
+internal record AllowedResponseDebug(AllowedResponseRbac? Rbac);
+
+[Serializable]
+internal record AllowedResponseRbac(string Reason);

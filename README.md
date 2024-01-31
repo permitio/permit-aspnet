@@ -22,7 +22,18 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
 
 * Install the package from `NuGet`
 * Configure the middleware:
-  ```csharp
+   ```json
+  // appsettings.json
+  {
+    ...
+    "Permit": {
+      "ApiKey": "<API_KEY",
+      "PDP": "http://localhost:7760" // Optional
+    }
+  }
+  ```
+  ```csharp  
+  // Program.cs / Startup.cs
   var permitSection = builder.Configuration.GetSection("Permit");
   builder.Services.AddPermit(permitSection);
   
@@ -33,6 +44,7 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
   }
   builder.Services.AddPermit(permitOptions);
   ```
+  
 * Enable the middleware:
   ```csharp
   app.UseAuthentication(); // Require by default
@@ -58,9 +70,19 @@ For each request, the middleware does:
 * Extract the user ID from the *JWT* token `NameIdentifier` claim (overridable)
 * Extract `action` and `resourceType` from the `Permit` attribute
   * Multiple attributes are run sequentially. Controller first, then action
-* Use the `PermitSDK` to call the *PDP*
+* Use the `HttpClientFactory` to get a `HttpClient` and all the PDP's `/allowed` endpoint 
 * If the user is not allowed, a `403` is returned
 * If the user is allowed, the request is processed
+
+## Minimal API
+
+This library works with the new *Minimal API* introduced in *ASP.NET Core 6* too:
+
+```csharp
+app.MapGetArticles()
+    .WithName("GetArticles")
+    .RequirePermit("read", "article");
+```
 
 ## Resource instances
 
