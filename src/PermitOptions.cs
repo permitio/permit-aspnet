@@ -20,5 +20,5 @@ public class PermitOptions
     /// <summary>
     /// The URL of the PDP
     /// </summary>
-    public string PDP { get; set; } = "http://localhost:7766";
+    public string PdpUrl { get; set; } = "http://localhost:7766";
 }

@@ -7,6 +7,8 @@
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <WarningsAsErrors>$(WarningsAsErrors);1591</WarningsAsErrors>
+        <Authors>Matteo Bortolazzo</Authors>
+        <RepositoryUrl>https://github.com/permitio/permit-aspnet</RepositoryUrl>
     </PropertyGroup>
     
     <ItemGroup>

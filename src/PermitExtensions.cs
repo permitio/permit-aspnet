@@ -56,7 +56,7 @@ public static class PermitExtensions
             .AddSingleton(serviceOptions)
             .AddHttpClient<PdpService>(client =>
             {
-                client.BaseAddress = new Uri(options.PDP);
+                client.BaseAddress = new Uri(options.PdpUrl);
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.ApiKey}");
                 client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
             });

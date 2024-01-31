@@ -17,6 +17,7 @@ public static class PermitEndpointConventionBuilderExtensions
     /// <typeparam name="TBuilder"></typeparam>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
+    
     public static TBuilder RequirePermit<TBuilder>(this TBuilder builder,
         string action, string resourceType, Action<IPermitData>? configurePolicy = null) where TBuilder : IEndpointConventionBuilder
     {
