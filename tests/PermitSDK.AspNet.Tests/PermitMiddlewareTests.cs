@@ -18,6 +18,7 @@ public class PermitMiddlewareTests
     private const string TestAction = "read";
     private const string DefaultUserKey = "defaultUserKey";
     private const string ProviderUserKey = "testUserKey";
+    private readonly Mock<ILogger<PermitMiddleware>> _loggerMock = new();
 
     [Fact]
     public async Task NoActionDescriptor_Ok()
@@ -29,7 +30,8 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions());
+            new PermitProvidersOptions(),
+            _loggerMock.Object);
 
         // Act
         await middleware.InvokeAsync(httpContext, null!);
@@ -48,7 +50,8 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions());
+            new PermitProvidersOptions(),
+            _loggerMock.Object);
 
         // Act
         await middleware.InvokeAsync(httpContext, null!);
@@ -67,7 +70,8 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions());
+            new PermitProvidersOptions(),
+            _loggerMock.Object);
 
         // Act
         await middleware.InvokeAsync(httpContext, null!);
@@ -88,7 +92,8 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions());
+            new PermitProvidersOptions(),
+            _loggerMock.Object);
 
         var attribute = new PermitAttribute(TestAction, TestResourceType);
         var httpContext = GetContextWithControllerAttributes(attribute);
@@ -112,7 +117,8 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions());
+            new PermitProvidersOptions(),
+            _loggerMock.Object);
 
         var attribute = new PermitAttribute(TestAction, TestResourceType);
         var httpContext = GetContextWithControllerAttributes(attribute);
@@ -141,7 +147,8 @@ public class PermitMiddlewareTests
             new PermitProvidersOptions
             {
                 GlobalUserKeyProviderType = typeof(TestUserKeyProvider)
-            });
+            },
+            _loggerMock.Object);
 
         var attribute = new PermitAttribute(TestAction, TestResourceType);
         var httpContext = GetContextWithControllerAttributes(attribute);
@@ -247,7 +254,7 @@ public class PermitMiddlewareTests
                         allowedRequest.User.Key == userKey && allowed;
                     
                     var response = new HttpResponseMessage();
-                    var content = JsonSerializer.Serialize(new AllowedResponse(responseAllowed), PdpService.SerializerOptions);
+                    var content = JsonSerializer.Serialize(new AllowedResponse(responseAllowed, null), PdpService.SerializerOptions);
                     response.Content = new StringContent(content);
                     return response;
                 })

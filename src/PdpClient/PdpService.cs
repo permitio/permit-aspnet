@@ -14,7 +14,7 @@ public sealed class PdpService: IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<PdpService> _logger;
-    private static readonly JsonSerializerOptions SerializerOptions = new()
+    internal static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
