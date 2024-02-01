@@ -10,18 +10,21 @@ internal class ResourceInputBuilder : IResourceInputBuilder
     private readonly PermitProvidersOptions _permitProvidersOptions;
     private bool _isFailed;
     private string? _resourceKey;
-    private string _tenant = "default";
+    private string? _tenant;
     private Dictionary<string, object>? _attributes;
     private Dictionary<string, object>? _context;
 
     private readonly IServiceProvider _serviceProvider;
 
     public ResourceInputBuilder(
-        PermitProvidersOptions permitProvidersOptions,
+        PermitServiceOptions permitServiceOptions,
         IServiceProvider serviceProvider)
     {
-        _permitProvidersOptions = permitProvidersOptions;
+        _permitProvidersOptions = permitServiceOptions.ProvidersOptions;
         _serviceProvider = serviceProvider;
+        _tenant = permitServiceOptions.Options.UseDefaultTenantIfEmpty
+            ? permitServiceOptions.Options.DefaultTenant
+            : null;
     }
 
     public async Task<ResourceInput?> BuildAsync(IPermitData data, HttpContext httpContext)

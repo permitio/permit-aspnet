@@ -80,7 +80,7 @@ public static class PermitExtensions
 
 
         IResourceInputBuilder resourceInputBuilder = new ResourceInputBuilder(
-            serviceOptions.ProvidersOptions, applicationBuilder.ApplicationServices);
+            serviceOptions, applicationBuilder.ApplicationServices);
         var pdp = applicationBuilder.ApplicationServices.GetService<PdpService>();
         var logger = applicationBuilder.ApplicationServices.GetService<ILogger<PermitMiddleware>>();
         

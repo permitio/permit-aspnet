@@ -166,7 +166,7 @@ public class ResourceInputBuilderTests
     public async Task ResourceKey_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(servicesAction: services => services
+        var builder = GetBuilder(configureService: services => services
             .AddSingleton<ResourceKeyProvider>()
             .AddSingleton<ResourceKeyProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType)
@@ -189,11 +189,11 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitProvidersOptions
+            providerOptions: new PermitProvidersOptions
             {
                 GlobalResourceKeyProviderType = typeof(ResourceKeyProviderDi)
             },
-            services => services
+            configureService: services => services
                 .AddSingleton<ResourceKeyProvider>()
                 .AddSingleton<ResourceKeyProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType);
@@ -376,7 +376,7 @@ public class ResourceInputBuilderTests
     public async Task Tenant_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(servicesAction: services => services
+        var builder = GetBuilder(configureService: services => services
             .AddSingleton<TenantProvider>()
             .AddSingleton<TenantProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType)
@@ -399,11 +399,11 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitProvidersOptions
+            providerOptions: new PermitProvidersOptions
             {
                 GlobalTenantProviderType = typeof(TenantProviderDi)
             },
-            services => services
+            configureService: services => services
                 .AddSingleton<TenantProvider>()
                 .AddSingleton<TenantProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType);
@@ -469,7 +469,7 @@ public class ResourceInputBuilderTests
     public async Task Attributes_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(servicesAction: services => services
+        var builder = GetBuilder(configureService: services => services
             .AddSingleton<AttributesProvider>()
             .AddSingleton<AttributesProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType)
@@ -492,11 +492,11 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitProvidersOptions
+            providerOptions: new PermitProvidersOptions
             {
                 GlobalAttributesProviderType = typeof(AttributesProviderDi)
             },
-            services => services
+            configureService: services => services
                 .AddSingleton<AttributesProvider>()
                 .AddSingleton<AttributesProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType);
@@ -562,7 +562,7 @@ public class ResourceInputBuilderTests
     public async Task Context_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(servicesAction: services => services
+        var builder = GetBuilder(configureService: services => services
             .AddSingleton<ContextProvider>()
             .AddSingleton<ContextProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType)
@@ -585,11 +585,11 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitProvidersOptions
+            providerOptions: new PermitProvidersOptions
             {
                 GlobalContextProviderType = typeof(ContextProviderDi)
             },
-            services => services
+            configureService: services => services
                 .AddSingleton<ContextProvider>()
                 .AddSingleton<ContextProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType);
@@ -632,13 +632,16 @@ public class ResourceInputBuilderTests
     #region Helpers
 
     private static ResourceInputBuilder GetBuilder(
-        PermitProvidersOptions? options = null,
-        Action<ServiceCollection>? servicesAction = null)
+        PermitOptions? permitOptions = null,
+        PermitProvidersOptions? providerOptions = null,
+        Action<ServiceCollection>? configureService = null)
     {
-        options ??= new PermitProvidersOptions();
+        permitOptions ??= new PermitOptions();
+        providerOptions ??= new PermitProvidersOptions();
         var services = new ServiceCollection();
-        servicesAction?.Invoke(services);
-        return new ResourceInputBuilder(options, services.BuildServiceProvider());
+        configureService?.Invoke(services);
+        var serviceOptions = new PermitServiceOptions(permitOptions, providerOptions);
+        return new ResourceInputBuilder(serviceOptions, services.BuildServiceProvider());
     }
 
     #endregion

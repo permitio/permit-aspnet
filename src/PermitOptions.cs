@@ -21,4 +21,14 @@ public class PermitOptions
     /// The URL of the PDP
     /// </summary>
     public string PdpUrl { get; set; } = "http://localhost:7766";
+    
+    /// <summary>
+    /// Default tenant
+    /// </summary>
+    public string DefaultTenant { get; set; } = "default"; 
+   
+    /// <summary>
+    /// If true, the default tenant will be used if the tenant is not specified in the request 
+    /// </summary>
+    public bool UseDefaultTenantIfEmpty { get; set; } = true; 
 }
