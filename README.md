@@ -27,8 +27,10 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
   {
     ...
     "Permit": {
-      "ApiKey": "<API_KEY",
+      "ApiKey": "<API_KEY", // Required
       "PdpUrl": "http://localhost:7760" // Optional
+      "DefaultTenant": "default" // Optional
+      "UseDefaultTenantIfEmpty": true // Optional 
     }
   }
   ```
