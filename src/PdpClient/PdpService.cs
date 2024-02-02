@@ -25,7 +25,7 @@ public sealed class PdpService: IDisposable
     /// </summary>
     /// <param name="httpClient"></param>
     /// <param name="logger"></param>
-    public PdpService( HttpClient httpClient, ILogger<PdpService> logger)
+    public PdpService(HttpClient httpClient, ILogger<PdpService> logger)
     {
         _httpClient = httpClient;
         _logger = logger;
@@ -60,7 +60,7 @@ public sealed class PdpService: IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose() => _httpClient?.Dispose();
+    public void Dispose() => _httpClient.Dispose();
 
     private static async Task<T?> DeserializeAsync<T>(HttpResponseMessage response)
     {

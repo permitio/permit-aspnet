@@ -27,7 +27,7 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
   {
     ...
     "Permit": {
-      "ApiKey": "<API_KEY", // Required
+      "ApiKey": "<API_KEY>", // Required
       "PdpUrl": "http://localhost:7760" // Optional
       "DefaultTenant": "default" // Optional
       "UseDefaultTenantIfEmpty": true // Optional 
@@ -41,7 +41,7 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
   // Or directly
   var permitOptions = new PermitOptions
   {
-      ApiKey = "<API_KEY"
+      ApiKey = "<API_KEY>"
   }
   builder.Services.AddPermit(permitOptions);
   ```
@@ -71,7 +71,7 @@ For each request, the middleware does:
 * Extract the user ID from the *JWT* token `NameIdentifier` claim (overridable)
 * Extract `action` and `resourceType` from the `Permit` attribute
   * Multiple attributes are run sequentially. Controller first, then action
-* Use the `HttpClientFactory` to get a `HttpClient` and all the PDP's `/allowed` endpoint 
+* Use the `HttpClientFactory` to get a `HttpClient` and call the PDP's `/allowed` endpoint 
 * If the user is not allowed, a `403` is returned
 * If the user is allowed, the request is processed
 
