@@ -17,7 +17,7 @@ public sealed class PermitMiddleware
     private readonly RequestDelegate _next;
     private readonly PdpService _pdpService;
     private readonly IResourceInputBuilder _resourceInputBuilder;
-    private readonly PermitProvidersOptions _permitProvidersOptions;
+    private readonly PermitOptions _options;
     private readonly ILogger<PermitMiddleware> _logger;
 
     /// <summary>
@@ -26,19 +26,19 @@ public sealed class PermitMiddleware
     /// <param name="next">Request delegate</param>
     /// <param name="pdpService">Service to call PDP endpoints</param>
     /// <param name="resourceInputBuilder">Builder for resource input</param>
-    /// <param name="permitProvidersOptions">Function to configure global providers</param>
+    /// <param name="options">Permit options</param>
     /// <param name="logger">Middleware logger</param>
     public PermitMiddleware(
         RequestDelegate next,
         PdpService pdpService, 
         IResourceInputBuilder resourceInputBuilder,
-        PermitProvidersOptions permitProvidersOptions,
+        PermitOptions options,
         ILogger<PermitMiddleware> logger)
     {
         _next = next;
         _pdpService = pdpService;
         _resourceInputBuilder = resourceInputBuilder;
-        _permitProvidersOptions = permitProvidersOptions;        
+        _options = options;
         _logger = logger;
     }
     
@@ -101,9 +101,9 @@ public sealed class PermitMiddleware
 
     private async Task<UserKey?> GetUserKeyAsync(HttpContext httpContext, IServiceProvider serviceProvider)
     {
-        if (_permitProvidersOptions.GlobalUserKeyProviderType != null)
+        if (_options.GlobalUserKeyProviderType != null)
         {
-            return await serviceProvider.GetProviderUserKey(httpContext, _permitProvidersOptions.GlobalUserKeyProviderType);
+            return await serviceProvider.GetProviderUserKey(httpContext, _options.GlobalUserKeyProviderType);
         }
         
         var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

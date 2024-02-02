@@ -18,42 +18,38 @@ public static class PermitExtensions
     /// Register the Permit middleware.
     /// </summary>
     /// <param name="services">Service collection</param>
-    /// <param name="configurationSection">Configuration section for Permit SDK options</param>
-    /// <param name="configureProviders">Function to configure global providers</param>
+    /// <param name="configuration">Configuration reference</param>
+    /// <param name="configureOptions">Function to configure global providers</param>
     /// <returns></returns>
     [ExcludeFromCodeCoverage]
     public static IServiceCollection AddPermit(this IServiceCollection services,
-        IConfigurationSection configurationSection,
-        Action<PermitProvidersOptionsConfiguration>? configureProviders = null)
+        IConfiguration configuration,
+        Action<PermitOptions>? configureOptions = null)
     {
         var options = new PermitOptions();
-        configurationSection.Bind(options);
-        return services.AddPermit(options, configureProviders);
+        configuration.GetSection("Permit").Bind(options);
+        configureOptions?.Invoke(options);
+        return services.AddPermit(options);
     }
-
+    
     /// <summary>
     /// Register the Permit middleware.
     /// </summary>
     /// <param name="services">Service collection</param>
     /// <param name="options">Permit SDK options</param>
-    /// <param name="configureProviders">Function to configure global providers</param>
     /// <exception cref="ArgumentNullException"></exception>
     /// <returns></returns>
     [ExcludeFromCodeCoverage]
     public static IServiceCollection AddPermit(this IServiceCollection services,
-        PermitOptions options,
-        Action<PermitProvidersOptionsConfiguration>? configureProviders = null)
+        PermitOptions options)
     {
         if (options.ApiKey == null)
         {
             throw new InvalidOperationException("API key not set.");
         }
         
-        var providersOptions = new PermitProvidersOptions();
-        configureProviders?.Invoke(new PermitProvidersOptionsConfiguration(providersOptions));        
-        var serviceOptions = new PermitServiceOptions(options, providersOptions);
         services
-            .AddSingleton(serviceOptions)
+            .AddSingleton(options)
             .AddHttpClient<PdpService>(client =>
             {
                 client.BaseAddress = new Uri(options.PdpUrl);
@@ -72,20 +68,20 @@ public static class PermitExtensions
     public static IApplicationBuilder UsePermit(
         this IApplicationBuilder applicationBuilder)
     {
-        var serviceOptions = applicationBuilder.ApplicationServices.GetService<PermitServiceOptions>();
-        if (serviceOptions == null)
+        var options = applicationBuilder.ApplicationServices.GetService<PermitOptions>();
+        if (options == null)
         {
             throw new InvalidOperationException("Permit middleware not registered.");
         }
 
 
         IResourceInputBuilder resourceInputBuilder = new ResourceInputBuilder(
-            serviceOptions, applicationBuilder.ApplicationServices);
+            options, applicationBuilder.ApplicationServices);
         var pdp = applicationBuilder.ApplicationServices.GetService<PdpService>();
         var logger = applicationBuilder.ApplicationServices.GetService<ILogger<PermitMiddleware>>();
         
         return applicationBuilder.UseMiddleware<PermitMiddleware>(
-            pdp, resourceInputBuilder, serviceOptions.ProvidersOptions, logger);
+            pdp, resourceInputBuilder, options, logger);
     }
     
     internal static Task<UserKey?> GetProviderUserKey(this IServiceProvider serviceProvider,

@@ -35,14 +35,13 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
   }
   ```
   ```csharp  
-  // Program.cs / Startup.cs
-  var permitSection = builder.Configuration.GetSection("Permit");
-  builder.Services.AddPermit(permitSection);
+  // Program.cs
+  builder.Services.AddPermit(builder.Configuration);
   
   // Or directly
   var permitOptions = new PermitOptions
   {
-      ...
+      ApiKey = "<API_KEY"
   }
   builder.Services.AddPermit(permitOptions);
   ```
@@ -161,8 +160,18 @@ public class FakeUserKeyProvider: IPermitUserKeyProvider
 To apply these providers for each request, there is a second argument in the `AddPermit` method:
 
 ```csharp
-builder.Services.AddPermit(permitSection, providersConf =>
-    providersConf.WithGlobalUserKeyProvider<FakeUserKeyProvider>());
+builder.Services.AddPermit(builder.Configuration, options =>
+    {
+        conf.GlobalUserKeyProviderType = typeof(FakeUserKeyProvider);
+    });
+
+
+// Or directly
+var permitOptions = new PermitOptions
+{
+    GlobalUserKeyProviderType = typeof(FakeUserKeyProvider);
+}
+builder.Services.AddPermit(permitOptions);
 ```
 
 ### Dependency injection

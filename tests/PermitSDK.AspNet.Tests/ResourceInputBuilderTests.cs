@@ -189,7 +189,7 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            providerOptions: new PermitProvidersOptions
+            options: new PermitOptions 
             {
                 GlobalResourceKeyProviderType = typeof(ResourceKeyProviderDi)
             },
@@ -399,7 +399,7 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            providerOptions: new PermitProvidersOptions
+            options: new PermitOptions 
             {
                 GlobalTenantProviderType = typeof(TenantProviderDi)
             },
@@ -492,7 +492,7 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            providerOptions: new PermitProvidersOptions
+            options: new PermitOptions 
             {
                 GlobalAttributesProviderType = typeof(AttributesProviderDi)
             },
@@ -585,7 +585,7 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            providerOptions: new PermitProvidersOptions
+            options: new PermitOptions 
             {
                 GlobalContextProviderType = typeof(ContextProviderDi)
             },
@@ -632,16 +632,13 @@ public class ResourceInputBuilderTests
     #region Helpers
 
     private static ResourceInputBuilder GetBuilder(
-        PermitOptions? permitOptions = null,
-        PermitProvidersOptions? providerOptions = null,
+        PermitOptions? options = null,
         Action<ServiceCollection>? configureService = null)
     {
-        permitOptions ??= new PermitOptions();
-        providerOptions ??= new PermitProvidersOptions();
+        options ??= new PermitOptions();
         var services = new ServiceCollection();
         configureService?.Invoke(services);
-        var serviceOptions = new PermitServiceOptions(permitOptions, providerOptions);
-        return new ResourceInputBuilder(serviceOptions, services.BuildServiceProvider());
+        return new ResourceInputBuilder(options, services.BuildServiceProvider());
     }
 
     #endregion

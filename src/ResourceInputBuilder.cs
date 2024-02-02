@@ -7,23 +7,23 @@ namespace PermitSDK.AspNet;
 
 internal class ResourceInputBuilder : IResourceInputBuilder
 {
-    private readonly PermitProvidersOptions _permitProvidersOptions;
+    private readonly PermitOptions _options;
     private bool _isFailed;
     private string? _resourceKey;
     private string? _tenant;
     private Dictionary<string, object>? _attributes;
     private Dictionary<string, object>? _context;
-
+    
     private readonly IServiceProvider _serviceProvider;
 
     public ResourceInputBuilder(
-        PermitServiceOptions permitServiceOptions,
+        PermitOptions options,
         IServiceProvider serviceProvider)
     {
-        _permitProvidersOptions = permitServiceOptions.ProvidersOptions;
+        _options = options;
         _serviceProvider = serviceProvider;
-        _tenant = permitServiceOptions.Options.UseDefaultTenantIfEmpty
-            ? permitServiceOptions.Options.DefaultTenant
+        _tenant = options.UseDefaultTenantIfEmpty
+            ? options.DefaultTenant
             : null;
     }
 
@@ -54,7 +54,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.ResourceKeyFromHeader,
                 data.ResourceKeyFromBody,
                 data.ResourceKeyProviderType,
-                _permitProvidersOptions.GlobalResourceKeyProviderType);
+                _options.GlobalResourceKeyProviderType);
 
             if (isSpecified && resourceKey == null)
             {
@@ -79,7 +79,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.TenantFromHeader,
                 data.TenantFromBody,
                 data.TenantProviderType,
-                _permitProvidersOptions.GlobalTenantProviderType);
+                _options.GlobalTenantProviderType);
 
             if (isSpecified && tenant == null)
             {
@@ -137,12 +137,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
         async Task TryAppendAttributesAsync()
         {
-            if (_isFailed || (data.AttributesProviderType == null && _permitProvidersOptions.GlobalAttributesProviderType == null))
+            if (_isFailed || (data.AttributesProviderType == null && _options.GlobalAttributesProviderType == null))
             {
                 return;
             }
 
-            var providerType = data.AttributesProviderType ?? _permitProvidersOptions.GlobalAttributesProviderType;
+            var providerType = data.AttributesProviderType ?? _options.GlobalAttributesProviderType;
             var attributes = await _serviceProvider.GetProviderValues(httpContext, providerType!);
             if (attributes == null)
             {
@@ -156,12 +156,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
         async Task TryAppendContextAsync()
         {
-            if (_isFailed || (data.ContextProviderType == null && _permitProvidersOptions.GlobalContextProviderType == null))
+            if (_isFailed || (data.ContextProviderType == null && _options.GlobalContextProviderType == null))
             {
                 return;
             }
 
-            var providerType = data.ContextProviderType ?? _permitProvidersOptions.GlobalContextProviderType;
+            var providerType = data.ContextProviderType ?? _options.GlobalContextProviderType;
             var context = await _serviceProvider.GetProviderValues(httpContext, providerType!);
             if (context == null)
             {

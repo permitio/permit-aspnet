@@ -30,7 +30,7 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions(),
+            new PermitOptions(),
             _loggerMock.Object);
 
         // Act
@@ -50,7 +50,7 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions(),
+            new PermitOptions(),
             _loggerMock.Object);
 
         // Act
@@ -70,7 +70,7 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions(),
+            new PermitOptions(),
             _loggerMock.Object);
 
         // Act
@@ -92,7 +92,7 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions(),
+            new PermitOptions(),
             _loggerMock.Object);
 
         var attribute = new PermitAttribute(TestAction, TestResourceType);
@@ -117,7 +117,7 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions(),
+            new PermitOptions(),
             _loggerMock.Object);
 
         var attribute = new PermitAttribute(TestAction, TestResourceType);
@@ -144,7 +144,7 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
-            new PermitProvidersOptions
+            new PermitOptions 
             {
                 GlobalUserKeyProviderType = typeof(TestUserKeyProvider)
             },
