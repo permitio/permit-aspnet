@@ -1,10 +1,23 @@
 namespace PermitSDK.AspNet.PdpClient.Models;
 
+/// <summary>
+/// Represents the allowed response from the PDP
+/// </summary>
+/// <param name="Allow"></param>
+/// <param name="Debug"></param>
 [Serializable]
-internal record AllowedResponse(bool Allow, AllowedResponseDebug? Debug);
+public record AllowedResponse(bool Allow, AllowedResponseDebug? Debug);
 
+/// <summary>
+/// Represents the debug information in an allowed response 
+/// </summary>
+/// <param name="Rbac"></param>
 [Serializable]
-internal record AllowedResponseDebug(AllowedResponseRbac? Rbac);
+public record AllowedResponseDebug(AllowedResponseRbac? Rbac);
 
+/// <summary>
+/// Represents the RBAC information in an allowed response
+/// </summary>
+/// <param name="Reason"></param>
 [Serializable]
-internal record AllowedResponseRbac(string Reason);
+public record AllowedResponseRbac(string Reason);

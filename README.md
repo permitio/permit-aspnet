@@ -229,3 +229,10 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
     ...
 }
 ```
+
+## PdpService
+
+If you need to call the PDP by using the `PdpService`, which has the following methods:
+* `IsAllowedAsync`
+* `GetUserPermissionsAsync`
+* `GetUserTenantsAsync`

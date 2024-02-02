@@ -129,6 +129,11 @@ public sealed class PermitMiddleware
         var resourceInput = await _resourceInputBuilder.BuildAsync(data, httpContext);
         
         // Call PDP
-        return await _pdpService.AllowAsync(userKey, data.Action, resourceInput!);
+        var response = await _pdpService.IsAllowedAsync(userKey, data.Action, resourceInput!);
+        if (response?.Debug?.Rbac?.Reason != null)
+        {
+            _logger.LogTrace("RBAC reason: {Reason}", response.Debug.Rbac.Reason);
+        }
+        return response?.Allow ?? false;
     }
 }

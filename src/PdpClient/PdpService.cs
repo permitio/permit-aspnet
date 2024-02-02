@@ -34,37 +34,61 @@ public sealed class PdpService: IDisposable
     /// <summary>
     /// Returns true if the user is allowed to perform the action on the resource.
     /// </summary>
-    /// <param name="user"></param>
-    /// <param name="action"></param>
-    /// <param name="resource"></param>
+    /// <param name="user">User info</param>
+    /// <param name="action">The action</param>
+    /// <param name="resource">The resource</param>
     /// <returns></returns>
-    public async Task<bool> AllowAsync(UserKey user, string action, ResourceInput resource)
+    public async Task<AllowedResponse?> IsAllowedAsync(UserKey user, string action, ResourceInput resource)
     {
-        var body = new AllowedRequest(user, resource, action, null);
-        var httpResponse = await _httpClient.PostAsJsonAsync("allowed", body, SerializerOptions);
+        var request = new AllowedRequest(user, resource, action, null);
+        var httpResponse = await _httpClient.PostAsJsonAsync("allowed", request, SerializerOptions);
+        return await HandleResponseAsync<AllowedResponse>(httpResponse);
+    }
 
-        if (httpResponse is { IsSuccessStatusCode: true, StatusCode: HttpStatusCode.OK })
-        {
-            var response = await DeserializeAsync<AllowedResponse>(httpResponse);
-            if (response?.Debug?.Rbac?.Reason != null)
-            {
-                _logger.LogTrace("RBAC reason: {Reason}", response.Debug.Rbac.Reason);
-            }
-            
-            return response!.Allow;
-        }
+    /// <summary>
+    /// Get the permissions a user has
+    /// </summary>
+    /// <param name="user">User info</param>
+    /// <param name="tenants">Filter by tenants</param>
+    /// <param name="resources">Filter by resources</param>
+    /// <param name="resourceTypes">Filter by resource types</param>
+    public async Task<Dictionary<string, UserPermissionResponseItem>?> GetUserPermissionsAsync(UserKey user, 
+        IEnumerable<string>? tenants = null,
+        IEnumerable<string>? resources = null,
+        IEnumerable<string>? resourceTypes = null)
+    {
+        var request = new GetUserPermissionsRequest(user, tenants?.ToArray(), resources?.ToArray(), resourceTypes?.ToArray());
+        var httpResponse = await _httpClient.PostAsJsonAsync("user-permissions", request, SerializerOptions);
+        return await HandleResponseAsync<Dictionary<string, UserPermissionResponseItem>>(httpResponse);
+    }
 
-        var errorMessage = await httpResponse.Content.ReadAsStringAsync();
-        _logger.LogError("Permit API returned {StatusCode}: {Message}", httpResponse.StatusCode, errorMessage);
-        return false;
+    /// <summary>
+    /// Get the tenants a user can access to
+    /// </summary>
+    /// <param name="user">User info</param>
+    public async Task<GetTenantResponse[]?> GetUserTenantsAsync(UserKey user)
+    {
+        var request = new GetUserTenantsRequest(user);
+        var httpResponse = await _httpClient.PostAsJsonAsync("user-tenants", request, SerializerOptions);
+        return await HandleResponseAsync<GetTenantResponse[]>(httpResponse);
     }
 
     /// <inheritdoc />
     public void Dispose() => _httpClient.Dispose();
-
-    private static async Task<T?> DeserializeAsync<T>(HttpResponseMessage response)
+ 
+    private async Task<TResponse?> HandleResponseAsync<TResponse>(HttpResponseMessage httpResponse)
+        where TResponse : class
     {
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<T>(jsonResponse, SerializerOptions);
+        if (httpResponse is { IsSuccessStatusCode: true, StatusCode: HttpStatusCode.OK })
+        {
+            var jsonResponse = await httpResponse.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<TResponse>(jsonResponse, SerializerOptions);
+        }
+
+        var errorMessage = await httpResponse.Content.ReadAsStringAsync();
+        _logger.LogError("{Url} returned {StatusCode}: {Message}", 
+            httpResponse.RequestMessage?.RequestUri?.AbsolutePath,
+            httpResponse.StatusCode, errorMessage);
+        return default;
     }
 }
