@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PermitSDK.Models;
+using Microsoft.Extensions.Logging;
+using PermitSDK.AspNet.PdpClient;
+using PermitSDK.AspNet.PdpClient.Models;
 
 namespace PermitSDK.AspNet;
 
@@ -16,41 +18,45 @@ public static class PermitExtensions
     /// Register the Permit middleware.
     /// </summary>
     /// <param name="services">Service collection</param>
-    /// <param name="configurationSection">Configuration section for Permit SDK options</param>
-    /// <param name="configureProviders">Function to configure global providers</param>
+    /// <param name="configuration">Configuration reference</param>
+    /// <param name="configureOptions">Function to configure global providers</param>
     /// <returns></returns>
     [ExcludeFromCodeCoverage]
     public static IServiceCollection AddPermit(this IServiceCollection services,
-        IConfigurationSection configurationSection,
-        Action<PermitProvidersOptionsConfiguration>? configureProviders = null)
+        IConfiguration configuration,
+        Action<PermitOptions>? configureOptions = null)
     {
         var options = new PermitOptions();
-        configurationSection.Bind(options);
-        return services.AddPermit(options, configureProviders);
+        configuration.GetSection("Permit").Bind(options);
+        configureOptions?.Invoke(options);
+        return services.AddPermit(options);
     }
-
+    
     /// <summary>
     /// Register the Permit middleware.
     /// </summary>
     /// <param name="services">Service collection</param>
     /// <param name="options">Permit SDK options</param>
-    /// <param name="configureProviders">Function to configure global providers</param>
     /// <exception cref="ArgumentNullException"></exception>
     /// <returns></returns>
     [ExcludeFromCodeCoverage]
     public static IServiceCollection AddPermit(this IServiceCollection services,
-        PermitOptions options,
-        Action<PermitProvidersOptionsConfiguration>? configureProviders = null)
+        PermitOptions options)
     {
         if (options.ApiKey == null)
         {
             throw new InvalidOperationException("API key not set.");
         }
         
-        var providersOptions = new PermitProvidersOptions();
-        configureProviders?.Invoke(new PermitProvidersOptionsConfiguration(providersOptions));        
-        var serviceOptions = new PermitServiceOptions(options, providersOptions);
-        return services.AddSingleton(serviceOptions);
+        services
+            .AddSingleton(options)
+            .AddHttpClient<PdpService>(client =>
+            {
+                client.BaseAddress = new Uri(options.PdpUrl);
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.ApiKey}");
+                client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
+            });
+        return services;
     }
 
     /// <summary>
@@ -62,19 +68,20 @@ public static class PermitExtensions
     public static IApplicationBuilder UsePermit(
         this IApplicationBuilder applicationBuilder)
     {
-        var serviceOptions = applicationBuilder.ApplicationServices.GetService<PermitServiceOptions>();
-        if (serviceOptions == null)
+        var options = applicationBuilder.ApplicationServices.GetService<PermitOptions>();
+        if (options == null)
         {
             throw new InvalidOperationException("Permit middleware not registered.");
         }
 
 
         IResourceInputBuilder resourceInputBuilder = new ResourceInputBuilder(
-            serviceOptions.ProvidersOptions, applicationBuilder.ApplicationServices);
-
-        IPermitProxy permitProxy = new PermitProxy(serviceOptions.Options);
+            options, applicationBuilder.ApplicationServices);
+        var pdp = applicationBuilder.ApplicationServices.GetService<PdpService>();
+        var logger = applicationBuilder.ApplicationServices.GetService<ILogger<PermitMiddleware>>();
+        
         return applicationBuilder.UseMiddleware<PermitMiddleware>(
-            permitProxy, resourceInputBuilder, serviceOptions.ProvidersOptions);
+            pdp, resourceInputBuilder, options, logger);
     }
     
     internal static Task<UserKey?> GetProviderUserKey(this IServiceProvider serviceProvider,

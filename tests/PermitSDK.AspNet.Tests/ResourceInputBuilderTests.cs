@@ -41,8 +41,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
 
     [Fact]
@@ -71,8 +71,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
@@ -101,8 +101,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
@@ -138,8 +138,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
@@ -158,15 +158,15 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
     public async Task ResourceKey_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(servicesAction: services => services
+        var builder = GetBuilder(configureService: services => services
             .AddSingleton<ResourceKeyProvider>()
             .AddSingleton<ResourceKeyProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType)
@@ -180,8 +180,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
     
     [Fact]
@@ -189,11 +189,11 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitProvidersOptions
+            options: new PermitOptions 
             {
                 GlobalResourceKeyProviderType = typeof(ResourceKeyProviderDi)
             },
-            services => services
+            configureService: services => services
                 .AddSingleton<ResourceKeyProvider>()
                 .AddSingleton<ResourceKeyProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType);
@@ -204,8 +204,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestResourceKey, result.key);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestResourceKey, result.Key);
     }
 
     private class ResourceKeyProvider : IPermitValueProvider
@@ -251,8 +251,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
 
     [Fact]
@@ -281,8 +281,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
@@ -311,8 +311,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
@@ -348,8 +348,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
@@ -368,15 +368,15 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
     public async Task Tenant_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(servicesAction: services => services
+        var builder = GetBuilder(configureService: services => services
             .AddSingleton<TenantProvider>()
             .AddSingleton<TenantProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType)
@@ -390,8 +390,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
     
     [Fact]
@@ -399,11 +399,11 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitProvidersOptions
+            options: new PermitOptions 
             {
                 GlobalTenantProviderType = typeof(TenantProviderDi)
             },
-            services => services
+            configureService: services => services
                 .AddSingleton<TenantProvider>()
                 .AddSingleton<TenantProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType);
@@ -414,8 +414,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestTenant, result.tenant);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestTenant, result.Tenant);
     }
 
     private class TenantProvider : IPermitValueProvider
@@ -461,15 +461,15 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestAttributes, result.attributes);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestAttributes, result.Attributes);
     }
     
     [Fact]
     public async Task Attributes_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(servicesAction: services => services
+        var builder = GetBuilder(configureService: services => services
             .AddSingleton<AttributesProvider>()
             .AddSingleton<AttributesProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType)
@@ -483,8 +483,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestAttributes, result.attributes);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestAttributes, result.Attributes);
     }
     
     [Fact]
@@ -492,11 +492,11 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitProvidersOptions
+            options: new PermitOptions 
             {
                 GlobalAttributesProviderType = typeof(AttributesProviderDi)
             },
-            services => services
+            configureService: services => services
                 .AddSingleton<AttributesProvider>()
                 .AddSingleton<AttributesProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType);
@@ -507,8 +507,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestAttributes, result.attributes);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestAttributes, result.Attributes);
     }
 
     private class AttributesProvider : IPermitValuesProvider
@@ -554,15 +554,15 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestContext, result.context);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestContext, result.Context);
     }
     
     [Fact]
     public async Task Context_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(servicesAction: services => services
+        var builder = GetBuilder(configureService: services => services
             .AddSingleton<ContextProvider>()
             .AddSingleton<ContextProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType)
@@ -576,8 +576,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestContext, result.context);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestContext, result.Context);
     }
     
     [Fact]
@@ -585,11 +585,11 @@ public class ResourceInputBuilderTests
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitProvidersOptions
+            options: new PermitOptions 
             {
                 GlobalContextProviderType = typeof(ContextProviderDi)
             },
-            services => services
+            configureService: services => services
                 .AddSingleton<ContextProvider>()
                 .AddSingleton<ContextProviderDi>());
         var attribute = new PermitAttribute(TestAction, TestType);
@@ -600,8 +600,8 @@ public class ResourceInputBuilderTests
         
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(TestType, result.type);
-        Assert.Equal(TestContext, result.context);
+        Assert.Equal(TestType, result.Type);
+        Assert.Equal(TestContext, result.Context);
     }
 
     private class ContextProvider : IPermitValuesProvider
@@ -632,12 +632,12 @@ public class ResourceInputBuilderTests
     #region Helpers
 
     private static ResourceInputBuilder GetBuilder(
-        PermitProvidersOptions? options = null,
-        Action<ServiceCollection>? servicesAction = null)
+        PermitOptions? options = null,
+        Action<ServiceCollection>? configureService = null)
     {
-        options ??= new PermitProvidersOptions();
+        options ??= new PermitOptions();
         var services = new ServiceCollection();
-        servicesAction?.Invoke(services);
+        configureService?.Invoke(services);
         return new ResourceInputBuilder(options, services.BuildServiceProvider());
     }
 

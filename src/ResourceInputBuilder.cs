@@ -1,31 +1,33 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using PermitSDK.Models;
+using PermitSDK.AspNet.PdpClient.Models;
 
 namespace PermitSDK.AspNet;
 
 internal class ResourceInputBuilder : IResourceInputBuilder
 {
-    private readonly PermitProvidersOptions _permitProvidersOptions;
+    private readonly PermitOptions _options;
     private bool _isFailed;
     private string? _resourceKey;
     private string? _tenant;
     private Dictionary<string, object>? _attributes;
     private Dictionary<string, object>? _context;
-
+    
     private readonly IServiceProvider _serviceProvider;
 
     public ResourceInputBuilder(
-        PermitProvidersOptions permitProvidersOptions,
+        PermitOptions options,
         IServiceProvider serviceProvider)
     {
-        _permitProvidersOptions = permitProvidersOptions;
+        _options = options;
         _serviceProvider = serviceProvider;
+        _tenant = options.UseDefaultTenantIfEmpty
+            ? options.DefaultTenant
+            : null;
     }
 
-    public async Task<ResourceInput?> BuildAsync(PermitAttribute attribute, HttpContext httpContext)
+    public async Task<ResourceInput?> BuildAsync(IPermitData data, HttpContext httpContext)
     {
         await TryAppendResourceKeyAsync();
         await TryAppendTenantAsync();
@@ -38,7 +40,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
         }
 
         return new ResourceInput(
-            attribute.ResourceType,
+            data.ResourceType,
             _resourceKey,
             _tenant,
             _attributes,
@@ -47,12 +49,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
         async Task TryAppendResourceKeyAsync()
         {
             var (isSpecified, resourceKey) = await GetValueAsync(
-                attribute.ResourceKey,
-                attribute.ResourceKeyFromRoute,
-                attribute.ResourceKeyFromHeader,
-                attribute.ResourceKeyFromBody,
-                attribute.ResourceKeyProviderType,
-                _permitProvidersOptions.GlobalResourceKeyProviderType);
+                data.ResourceKey,
+                data.ResourceKeyFromRoute,
+                data.ResourceKeyFromHeader,
+                data.ResourceKeyFromBody,
+                data.ResourceKeyProviderType,
+                _options.GlobalResourceKeyProviderType);
 
             if (isSpecified && resourceKey == null)
             {
@@ -72,12 +74,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             }
 
             var (isSpecified, tenant) = await GetValueAsync(
-                attribute.Tenant,
-                attribute.TenantFromRoute,
-                attribute.TenantFromHeader,
-                attribute.TenantFromBody,
-                attribute.TenantProviderType,
-                _permitProvidersOptions.GlobalTenantProviderType);
+                data.Tenant,
+                data.TenantFromRoute,
+                data.TenantFromHeader,
+                data.TenantFromBody,
+                data.TenantProviderType,
+                _options.GlobalTenantProviderType);
 
             if (isSpecified && tenant == null)
             {
@@ -135,12 +137,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
         async Task TryAppendAttributesAsync()
         {
-            if (_isFailed || (attribute.AttributesProviderType == null && _permitProvidersOptions.GlobalAttributesProviderType == null))
+            if (_isFailed || (data.AttributesProviderType == null && _options.GlobalAttributesProviderType == null))
             {
                 return;
             }
 
-            var providerType = attribute.AttributesProviderType ?? _permitProvidersOptions.GlobalAttributesProviderType;
+            var providerType = data.AttributesProviderType ?? _options.GlobalAttributesProviderType;
             var attributes = await _serviceProvider.GetProviderValues(httpContext, providerType!);
             if (attributes == null)
             {
@@ -154,12 +156,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
         async Task TryAppendContextAsync()
         {
-            if (_isFailed || (attribute.ContextProviderType == null && _permitProvidersOptions.GlobalContextProviderType == null))
+            if (_isFailed || (data.ContextProviderType == null && _options.GlobalContextProviderType == null))
             {
                 return;
             }
 
-            var providerType = attribute.ContextProviderType ?? _permitProvidersOptions.GlobalContextProviderType;
+            var providerType = data.ContextProviderType ?? _options.GlobalContextProviderType;
             var context = await _serviceProvider.GetProviderValues(httpContext, providerType!);
             if (context == null)
             {
@@ -191,9 +193,39 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 requestBody = await reader.ReadToEndAsync();
             }
 
-            var jsonObject = JsonConvert.DeserializeObject<JObject>(requestBody);
-            var propertyValue = jsonObject?.SelectToken(jsonPropertyPath);
-            return propertyValue?.ToString();
+            var jsonDocument = JsonDocument.Parse(requestBody);
+            var node = GetJsonElement(jsonDocument.RootElement, jsonPropertyPath);
+            return GetJsonElementValue(node);
         }
+        
+        static JsonElement GetJsonElement(JsonElement jsonElement, string path)
+        {
+            if (jsonElement.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+            {
+                return default;
+            }
+
+            var segments = path.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var t in segments)
+            {
+                jsonElement = jsonElement.TryGetProperty(t, out var value) ? value : default;
+
+                if (jsonElement.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                {
+                    return default;
+                }
+            }
+
+            return jsonElement;
+        }
+        
+        static string? GetJsonElementValue(JsonElement jsonElement)
+        {
+            return
+                jsonElement.ValueKind != JsonValueKind.Null &&
+                jsonElement.ValueKind != JsonValueKind.Undefined ?
+                    jsonElement.ToString() :
+                    default;
+        } 
     }
 }

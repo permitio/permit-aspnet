@@ -3,7 +3,9 @@ using System.Reflection;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using PermitSDK.Models;
+using Microsoft.Extensions.Logging;
+using PermitSDK.AspNet.PdpClient;
+using PermitSDK.AspNet.PdpClient.Models;
 
 namespace PermitSDK.AspNet;
 
@@ -12,28 +14,32 @@ namespace PermitSDK.AspNet;
 /// </summary>
 public sealed class PermitMiddleware
 {
-    private readonly IPermitProxy _permit;
     private readonly RequestDelegate _next;
+    private readonly PdpService _pdpService;
     private readonly IResourceInputBuilder _resourceInputBuilder;
-    private readonly PermitProvidersOptions _permitProvidersOptions;
+    private readonly PermitOptions _options;
+    private readonly ILogger<PermitMiddleware> _logger;
 
     /// <summary>
     /// Constructor
     /// </summary>
     /// <param name="next">Request delegate</param>
-    /// <param name="permit">Permit SDK instance</param>
+    /// <param name="pdpService">Service to call PDP endpoints</param>
     /// <param name="resourceInputBuilder">Builder for resource input</param>
-    /// <param name="permitProvidersOptions">Function to configure global providers</param>
+    /// <param name="options">Permit options</param>
+    /// <param name="logger">Middleware logger</param>
     public PermitMiddleware(
         RequestDelegate next,
-        IPermitProxy permit,
+        PdpService pdpService, 
         IResourceInputBuilder resourceInputBuilder,
-        PermitProvidersOptions permitProvidersOptions)
+        PermitOptions options,
+        ILogger<PermitMiddleware> logger)
     {
         _next = next;
-        _permit = permit;
+        _pdpService = pdpService;
         _resourceInputBuilder = resourceInputBuilder;
-        _permitProvidersOptions = permitProvidersOptions;        
+        _options = options;
+        _logger = logger;
     }
     
     /// <summary>
@@ -45,8 +51,7 @@ public sealed class PermitMiddleware
     {
         // Get the endpoint information
         var endpoint = httpContext.GetEndpoint();
-        if (endpoint?.Metadata.GetMetadata<ControllerActionDescriptor>()
-            is not { } actionDescriptor)
+        if (endpoint == null)
         {
             await _next(httpContext);
             return;
@@ -56,33 +61,49 @@ public sealed class PermitMiddleware
         var userKey = await GetUserKeyAsync(httpContext, serviceProvider);
         if (userKey == null)
         {
+            _logger.LogTrace("User key not found.");
             await _next(httpContext);
             return;
         }
         
-        // Get the Permit attribute from controller and action
-        var controllerAttributes = actionDescriptor.ControllerTypeInfo.GetCustomAttributes<PermitAttribute>(inherit: true);
-        var actionAttributes = actionDescriptor.MethodInfo.GetCustomAttributes<PermitAttribute>(inherit: true);
-
-        var attributes = controllerAttributes.Concat(actionAttributes).ToArray();
-        foreach (var attribute in attributes)
+        var permitMedata = GetPermitEndpointMetadata(endpoint);
+        foreach (var data in permitMedata)
         {
-            var controllerPermitted = await IsAuthorizedAsync(httpContext, attribute, userKey);
-            if (!controllerPermitted)
-            {
-                httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                return;
-            }
+            var controllerPermitted = await IsAuthorizedAsync(httpContext, data, userKey);
+            if (controllerPermitted) continue;
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+            return;
         }
 
         await _next(httpContext);
     }
 
+    private static IEnumerable<IPermitData> GetPermitEndpointMetadata(Endpoint endpoint)
+    {
+        var permitData = endpoint.Metadata.GetOrderedMetadata<IPermitData>();
+        if (permitData.Any())
+        {
+            return permitData;
+        }
+
+        if (endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()
+            is not { } actionDescriptor)
+        {
+            return Array.Empty<IPermitData>();
+        }
+
+        var controllerAttributes = actionDescriptor.ControllerTypeInfo
+            .GetCustomAttributes<PermitAttribute>(inherit: true);
+        var actionAttributes = actionDescriptor.MethodInfo
+            .GetCustomAttributes<PermitAttribute>(inherit: true);
+        return controllerAttributes.Concat(actionAttributes).ToArray();
+    }
+
     private async Task<UserKey?> GetUserKeyAsync(HttpContext httpContext, IServiceProvider serviceProvider)
     {
-        if (_permitProvidersOptions.GlobalUserKeyProviderType != null)
+        if (_options.GlobalUserKeyProviderType != null)
         {
-            return await serviceProvider.GetProviderUserKey(httpContext, _permitProvidersOptions.GlobalUserKeyProviderType);
+            return await serviceProvider.GetProviderUserKey(httpContext, _options.GlobalUserKeyProviderType);
         }
         
         var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -98,16 +119,21 @@ public sealed class PermitMiddleware
     }
 
     private async Task<bool> IsAuthorizedAsync(HttpContext httpContext,
-        PermitAttribute attribute, UserKey userKey)
+        IPermitData data, UserKey userKey)
     {
-        if (string.IsNullOrWhiteSpace(attribute.ResourceType))
+        if (string.IsNullOrWhiteSpace(data.ResourceType))
         {
             return false;
         }
 
-        var resourceInput = await _resourceInputBuilder.BuildAsync(attribute, httpContext);
+        var resourceInput = await _resourceInputBuilder.BuildAsync(data, httpContext);
         
         // Call PDP
-        return await _permit.CheckAsync(userKey, attribute.Action, resourceInput!);
+        var response = await _pdpService.IsAllowedAsync(userKey, data.Action, resourceInput!);
+        if (response?.Debug?.Rbac?.Reason != null)
+        {
+            _logger.LogTrace("RBAC reason: {Reason}", response.Debug.Rbac.Reason);
+        }
+        return response?.Allow ?? false;
     }
 }

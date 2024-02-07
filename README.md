@@ -22,17 +22,30 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
 
 * Install the package from `NuGet`
 * Configure the middleware:
-  ```csharp
-  var permitSection = builder.Configuration.GetSection("Permit");
-  builder.Services.AddPermit(permitSection);
+   ```json
+  // appsettings.json
+  {
+    ...
+    "Permit": {
+      "ApiKey": "<API_KEY>", // Required
+      "PdpUrl": "http://localhost:7760" // Optional
+      "DefaultTenant": "default" // Optional
+      "UseDefaultTenantIfEmpty": true // Optional 
+    }
+  }
+  ```
+  ```csharp  
+  // Program.cs
+  builder.Services.AddPermit(builder.Configuration);
   
   // Or directly
   var permitOptions = new PermitOptions
   {
-      ...
+      ApiKey = "<API_KEY>"
   }
   builder.Services.AddPermit(permitOptions);
   ```
+  
 * Enable the middleware:
   ```csharp
   app.UseAuthentication(); // Require by default
@@ -58,9 +71,19 @@ For each request, the middleware does:
 * Extract the user ID from the *JWT* token `NameIdentifier` claim (overridable)
 * Extract `action` and `resourceType` from the `Permit` attribute
   * Multiple attributes are run sequentially. Controller first, then action
-* Use the `PermitSDK` to call the *PDP*
+* Use the `HttpClientFactory` to get a `HttpClient` and call the PDP's `/allowed` endpoint 
 * If the user is not allowed, a `403` is returned
 * If the user is allowed, the request is processed
+
+## Minimal API
+
+This library works with the new *Minimal API* introduced in *ASP.NET Core 6* too:
+
+```csharp
+app.MapGetArticles()
+    .WithName("GetArticles")
+    .RequirePermit("read", "article");
+```
 
 ## Resource instances
 
@@ -137,8 +160,18 @@ public class FakeUserKeyProvider: IPermitUserKeyProvider
 To apply these providers for each request, there is a second argument in the `AddPermit` method:
 
 ```csharp
-builder.Services.AddPermit(permitSection, providersConf =>
-    providersConf.WithGlobalUserKeyProvider<FakeUserKeyProvider>());
+builder.Services.AddPermit(builder.Configuration, options =>
+    {
+        conf.GlobalUserKeyProviderType = typeof(FakeUserKeyProvider);
+    });
+
+
+// Or directly
+var permitOptions = new PermitOptions
+{
+    GlobalUserKeyProviderType = typeof(FakeUserKeyProvider);
+}
+builder.Services.AddPermit(permitOptions);
 ```
 
 ### Dependency injection
@@ -196,3 +229,10 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
     ...
 }
 ```
+
+## PdpService
+
+If you need to call the PDP by using the `PdpService`, which has the following methods:
+* `IsAllowedAsync`
+* `GetUserPermissionsAsync`
+* `GetUserTenantsAsync`

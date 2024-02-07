@@ -2,12 +2,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace PermitSDK.AspNet;
 
-[ExcludeFromCodeCoverage]
-internal record PermitServiceOptions(PermitOptions Options, PermitProvidersOptions ProvidersOptions);
-
 /// <summary>
 /// Permit SDK options
 /// </summary>
+[Serializable]
 [ExcludeFromCodeCoverage]
 public class PermitOptions
 {
@@ -15,36 +13,44 @@ public class PermitOptions
     /// Token to access Permit APIs
     /// </summary>
     public string? ApiKey { get; set; }
+
     /// <summary>
     /// The URL of the PDP
     /// </summary>
-    public string PDP { get; set; } = "http://localhost:7766";
+    public string PdpUrl { get; set; } = "http://localhost:7766";
+
     /// <summary>
     /// Default tenant
     /// </summary>
     public string DefaultTenant { get; set; } = "default";
+
     /// <summary>
-    /// If true, the default tenant will be used if the tenant is not specified in the request
+    /// If true, the default tenant will be used if the tenant is not specified in the request 
     /// </summary>
     public bool UseDefaultTenantIfEmpty { get; set; } = true;
+
     /// <summary>
-    /// Enable debug mode to get more information about the request
+    /// Get or set the type of <see cref="IPermitValueProvider"/> to use to get the resource key
     /// </summary>
-    public bool DebugMode { get; set; } = false;
+    public Type? GlobalResourceKeyProviderType { get; set; }
+
     /// <summary>
-    /// The URL of the Permit API
+    /// Get or set the type of <see cref="IPermitValueProvider"/> to use to get the tenant
     /// </summary>
-    public string ApiUrl { get; set; } = "https://api.permit.io";
+    public Type? GlobalTenantProviderType { get; set; }
+
     /// <summary>
-    /// The log level
+    /// Get or set the type of <see cref="IPermitValuesProvider"/> to use to get the attributes
     /// </summary>
-    public string Level { get; set; } = "info";
+    public Type? GlobalAttributesProviderType { get; set; }
+
     /// <summary>
-    /// The label on the logger
+    /// Get or set the type of <see cref="IPermitValuesProvider"/> to use to get the context
     /// </summary>
-    public string Label { get; set; } = "permitio-sdk";
+    public Type? GlobalContextProviderType { get; set; }
+
     /// <summary>
-    /// If true, the logger will log as JSON
+    /// Get or set the type of <see cref="IPermitUserKeyProvider"/> to use to get the user key
     /// </summary>
-    public bool LogAsJson { get; set; } = false;
+    public Type? GlobalUserKeyProviderType { get; set; }
 }

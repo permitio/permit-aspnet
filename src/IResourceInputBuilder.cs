@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using PermitSDK.Models;
+using PermitSDK.AspNet.PdpClient.Models;
 
 namespace PermitSDK.AspNet;
 
@@ -12,5 +12,5 @@ public interface IResourceInputBuilder
     /// Create the <see cref="ResourceInput"/> instance.
     /// </summary>
     /// <returns></returns>
-    Task<ResourceInput?> BuildAsync(PermitAttribute attribute, HttpContext httpContext);    
+    Task<ResourceInput?> BuildAsync(IPermitData data, HttpContext httpContext);    
 }
