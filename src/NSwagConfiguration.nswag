@@ -38,7 +38,7 @@
       "generateNativeRecords": true,
       "generateContractsOutput": true,
       "contractsNamespace": "PermitSDK.AspNet.Services",
-      "contractsOutputFilePath": "../../Repos/permit-aspnet/src/Services/PdpService.Contracts.cs",
+      "contractsOutputFilePath": "../PdpService.Contracts.cs",
       "parameterDateTimeFormat": "s",
       "parameterDateFormat": "yyyy-MM-dd",
       "generateUpdateJsonSerializerSettingsMethod": true,
@@ -97,7 +97,7 @@
       "templateDirectory": null,
       "serviceHost": null,
       "serviceSchemes": null,
-      "output": "../../Repos/permit-aspnet/src/Services/PdpService.cs",
+      "output": "../Services/PdpService.cs",
       "newLineBehavior": "Auto"
     }
   }
