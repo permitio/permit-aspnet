@@ -1,6 +1,8 @@
 ﻿using System.Net;
 using System.Reflection;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Logging;
@@ -130,9 +132,12 @@ public sealed class PermitMiddleware
         // Call PDP
         var request = new AuthorizationQuery(data.Action, null, resourceInput, null, userKey);
         var response = await _pdpService.AllowedAsync(request);
-        if (response?.Debug != null)
+        if (response?.Debug is JsonElement debugNode && 
+            debugNode.TryGetProperty("rbac", out var rbacNode) &&
+            rbacNode.TryGetProperty("reason", out var reasonNode))
         {
-            _logger.LogTrace("RBAC reason: {Reason}", "test"); // response.Debug.Rbac.Reason);
+            var reason = reasonNode.GetString();
+            _logger.LogDebug("RBAC reason: {Reason}", reason); // response.Debug.Rbac.Reason);
         }
         return response?.Allow ?? false;
     }
