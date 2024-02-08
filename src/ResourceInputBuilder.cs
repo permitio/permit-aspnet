@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Http;
-using PermitSDK.AspNet.PdpClient.Models;
+using PermitSDK.AspNet.Services;
 
 namespace PermitSDK.AspNet;
 
@@ -27,7 +27,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             : null;
     }
 
-    public async Task<ResourceInput?> BuildAsync(IPermitData data, HttpContext httpContext)
+    public async Task<Resource?> BuildAsync(IPermitData data, HttpContext httpContext)
     {
         await TryAppendResourceKeyAsync();
         await TryAppendTenantAsync();
@@ -39,12 +39,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             return null;
         }
 
-        return new ResourceInput(
-            data.ResourceType,
+        return new Resource(
+            _attributes,
+            _context,
             _resourceKey,
             _tenant,
-            _attributes,
-            _context);
+            data.ResourceType);
 
         async Task TryAppendResourceKeyAsync()
         {

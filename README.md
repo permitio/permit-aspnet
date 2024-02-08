@@ -42,7 +42,7 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
   var permitOptions = new PermitOptions
   {
       ApiKey = "<API_KEY>"
-  }
+  };
   builder.Services.AddPermit(permitOptions);
   ```
   
@@ -230,9 +230,6 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
 }
 ```
 
-## PdpService
+## Call the PDP
 
-If you need to call the PDP by using the `PdpService`, which has the following methods:
-* `IsAllowedAsync`
-* `GetUserPermissionsAsync`
-* `GetUserTenantsAsync`
+If you need to call the *PDP*, you can inject the `PdpService`, which is a wrapper around the `HttpClient` created by `NSwag`.

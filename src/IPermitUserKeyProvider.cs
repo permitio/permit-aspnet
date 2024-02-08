@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using PermitSDK.AspNet.PdpClient.Models;
+using PermitSDK.AspNet.Services;
 
 namespace PermitSDK.AspNet;
 
@@ -13,5 +13,5 @@ public interface IPermitUserKeyProvider
     /// </summary>
     /// <param name="httpContext"></param>
     /// <returns></returns>
-    Task<UserKey> GetUserKeyAsync(HttpContext httpContext);
+    Task<User> GetUserKeyAsync(HttpContext httpContext);
 }

@@ -1,13 +1,13 @@
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
-using PermitSDK.AspNet.PdpClient;
-using PermitSDK.AspNet.PdpClient.Models;
+using PermitSDK.AspNet.Services;
 using PermitSDK.AspNet.Tests.Mock;
 
 namespace PermitSDK.AspNet.Tests;
@@ -88,7 +88,7 @@ public class PermitMiddlewareTests
         var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
         resourceInputBuilderMock.Setup(m => m.BuildAsync(It.Is<PermitAttribute>(a =>
                 a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
-            .ReturnsAsync(new ResourceInput(TestResourceType));
+            .ReturnsAsync(new Resource(null, null, null, null, TestResourceType));
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
@@ -113,7 +113,7 @@ public class PermitMiddlewareTests
         var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
         resourceInputBuilderMock.Setup(m => m.BuildAsync(It.Is<PermitAttribute>(a =>
                 a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
-            .ReturnsAsync(new ResourceInput(TestResourceType));
+            .ReturnsAsync(new Resource(null, null, null, null, TestResourceType));
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
@@ -123,7 +123,7 @@ public class PermitMiddlewareTests
         var attribute = new PermitAttribute(TestAction, TestResourceType);
         var httpContext = GetContextWithControllerAttributes(attribute);
         resourceInputBuilderMock.Setup(m => m.BuildAsync(attribute, httpContext))
-            .ReturnsAsync(new ResourceInput(attribute.ResourceType));
+            .ReturnsAsync(new Resource(null, null, null, null, attribute.ResourceType));
 
         // Act
         await middleware.InvokeAsync(httpContext, null!);
@@ -140,7 +140,7 @@ public class PermitMiddlewareTests
         var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
         resourceInputBuilderMock.Setup(m => m.BuildAsync(It.Is<PermitAttribute>(a =>
                 a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
-            .ReturnsAsync(new ResourceInput(TestResourceType));
+            .ReturnsAsync(new Resource(null, null, null, null, TestResourceType));
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderMock.Object,
@@ -153,7 +153,7 @@ public class PermitMiddlewareTests
         var attribute = new PermitAttribute(TestAction, TestResourceType);
         var httpContext = GetContextWithControllerAttributes(attribute);
         resourceInputBuilderMock.Setup(m => m.BuildAsync(attribute, httpContext))
-            .ReturnsAsync(new ResourceInput(attribute.ResourceType));
+            .ReturnsAsync(new Resource(null, null, null, null, attribute.ResourceType));
 
         // Act
         await middleware.InvokeAsync(httpContext, null!);
@@ -230,14 +230,19 @@ public class PermitMiddlewareTests
 
     private class TestUserKeyProvider : IPermitUserKeyProvider
     {
-        public Task<UserKey> GetUserKeyAsync(HttpContext httpContext)
+        public Task<User> GetUserKeyAsync(HttpContext httpContext)
         {
-            return Task.FromResult(new UserKey(ProviderUserKey));
+            return Task.FromResult(new User(null, null, null, ProviderUserKey, null));
         }
     }
 
     private static PdpService GetPdpServiceFromAllowed(string userKey, string action, string type, string? resourceKey, bool allowed)
     {
+        var serializationOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
         return GetPdpService(messageHandlerMock =>
         {
             messageHandlerMock.Protected()
@@ -246,7 +251,7 @@ public class PermitMiddlewareTests
                 .Returns(async (HttpRequestMessage request, CancellationToken token) =>
                 {
                     var body = await request.Content!.ReadAsStringAsync(token);
-                    var allowedRequest = JsonSerializer.Deserialize<AllowedRequest>(body, PdpService.SerializerOptions)!;
+                    var allowedRequest = JsonSerializer.Deserialize<AuthorizationQuery>(body, serializationOptions)!;
                     var responseAllowed =
                         allowedRequest.Action == action &&
                         allowedRequest.Resource.Type == type &&
@@ -254,7 +259,7 @@ public class PermitMiddlewareTests
                         allowedRequest.User.Key == userKey && allowed;
                     
                     var response = new HttpResponseMessage();
-                    var content = JsonSerializer.Serialize(new AllowedResponse(responseAllowed, null), PdpService.SerializerOptions);
+                    var content = JsonSerializer.Serialize(new AuthorizationResult(responseAllowed, null, null, null), serializationOptions);
                     response.Content = new StringContent(content);
                     return response;
                 })
@@ -268,7 +273,6 @@ public class PermitMiddlewareTests
         mockSetup(handlerMock); 
         var httpClient = new HttpClient(handlerMock.Object);
         httpClient.BaseAddress = new Uri("http://localhost");
-        var loggerMock = new Mock<ILogger<PdpService>>();
-        return new PdpService(httpClient, loggerMock.Object);
+        return new PdpService(httpClient);
     }
 }
