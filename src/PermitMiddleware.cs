@@ -1,11 +1,12 @@
 ﻿using System.Net;
 using System.Reflection;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Logging;
-using PermitSDK.AspNet.PdpClient;
-using PermitSDK.AspNet.PdpClient.Models;
+using PermitSDK.AspNet.Services;
 
 namespace PermitSDK.AspNet;
 
@@ -99,13 +100,13 @@ public sealed class PermitMiddleware
         return controllerAttributes.Concat(actionAttributes).ToArray();
     }
 
-    private async Task<UserKey?> GetUserKeyAsync(HttpContext httpContext, IServiceProvider serviceProvider)
+    private async Task<User?> GetUserKeyAsync(HttpContext httpContext, IServiceProvider serviceProvider)
     {
         if (_options.GlobalUserKeyProviderType != null)
         {
             return await serviceProvider.GetProviderUserKey(httpContext, _options.GlobalUserKeyProviderType);
         }
-        
+
         var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId == null)
         {
@@ -115,11 +116,11 @@ public sealed class PermitMiddleware
         var firstName = httpContext.User.FindFirst(ClaimTypes.GivenName)?.Value ?? string.Empty;
         var lastName = httpContext.User.FindFirst(ClaimTypes.Surname)?.Value ?? string.Empty;
         var email = httpContext.User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
-        return new UserKey(userId, firstName, lastName, email);
+        return new User(null, email, firstName, userId, lastName);
     }
 
     private async Task<bool> IsAuthorizedAsync(HttpContext httpContext,
-        IPermitData data, UserKey userKey)
+        IPermitData data, User userKey)
     {
         if (string.IsNullOrWhiteSpace(data.ResourceType))
         {
@@ -129,10 +130,14 @@ public sealed class PermitMiddleware
         var resourceInput = await _resourceInputBuilder.BuildAsync(data, httpContext);
         
         // Call PDP
-        var response = await _pdpService.IsAllowedAsync(userKey, data.Action, resourceInput!);
-        if (response?.Debug?.Rbac?.Reason != null)
+        var request = new AuthorizationQuery(data.Action, null, resourceInput, null, userKey);
+        var response = await _pdpService.AllowedAsync(request);
+        if (response?.Debug is JsonElement debugNode && 
+            debugNode.TryGetProperty("rbac", out var rbacNode) &&
+            rbacNode.TryGetProperty("reason", out var reasonNode))
         {
-            _logger.LogTrace("RBAC reason: {Reason}", response.Debug.Rbac.Reason);
+            var reason = reasonNode.GetString();
+            _logger.LogDebug("RBAC reason: {Reason}", reason); // response.Debug.Rbac.Reason);
         }
         return response?.Allow ?? false;
     }

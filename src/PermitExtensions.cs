@@ -4,8 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using PermitSDK.AspNet.PdpClient;
-using PermitSDK.AspNet.PdpClient.Models;
+using PermitSDK.AspNet.Services;
 
 namespace PermitSDK.AspNet;
 
@@ -84,10 +83,10 @@ public static class PermitExtensions
             pdp, resourceInputBuilder, options, logger);
     }
     
-    internal static Task<UserKey?> GetProviderUserKey(this IServiceProvider serviceProvider,
+    internal static Task<User?> GetProviderUserKey(this IServiceProvider serviceProvider,
         HttpContext httpContext, Type providerType)
     { 
-        return serviceProvider.RunProviderAsync<IPermitUserKeyProvider, UserKey>(
+        return serviceProvider.RunProviderAsync<IPermitUserKeyProvider, User>(
             providerType, provider => provider.GetUserKeyAsync(httpContext));
     }
     
