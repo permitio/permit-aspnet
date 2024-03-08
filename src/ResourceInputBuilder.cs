@@ -52,6 +52,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.ResourceKey,
                 data.ResourceKeyFromRoute,
                 data.ResourceKeyFromHeader,
+                data.ResourceKeyFromQuery,
                 data.ResourceKeyFromBody,
                 data.ResourceKeyProviderType,
                 _options.GlobalResourceKeyProviderType);
@@ -77,6 +78,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.Tenant,
                 data.TenantFromRoute,
                 data.TenantFromHeader,
+                data.TenantFromQuery,
                 data.TenantFromBody,
                 data.TenantProviderType,
                 _options.GlobalTenantProviderType);
@@ -95,6 +97,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             string? staticValue,
             string? fromRoute,
             string? fromHeader,
+            string? fromQuery,
             string? fromBody,
             Type? providerType,
             Type? globalProviderType)
@@ -112,6 +115,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             if (!string.IsNullOrWhiteSpace(fromHeader))
             {
                 var value = GetValueFromHeader(fromHeader);
+                return (true, value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(fromQuery))
+            {
+                var value = GetValueFromQuery(fromQuery);
                 return (true, value);
             }
 
@@ -182,6 +191,13 @@ internal class ResourceInputBuilder : IResourceInputBuilder
         {
             _ = httpContext.Request.Headers
                 .TryGetValue(headerName, out var value);
+            return value;
+        }
+
+        string? GetValueFromQuery(string queryParameter)
+        {
+            _ = httpContext.Request.Query
+                .TryGetValue(queryParameter, out var value);
             return value;
         }
 

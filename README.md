@@ -105,6 +105,7 @@ There are many ways to specify the resource instance:
 | `ResourceKey`             | Static value                               |
 | `ResourceKeyFromRoute`    | From a route parameter                     | 
 | `ResourceKeyFromHeader`   | From a header                              |
+| `ResourceKeyFromQuery`    | From a query parameter                     |
 | `ResourceKeyFromBody`     | From the body. Nesting supported with dots |
 | `ResourceKeyProviderType` | Custom provider, explained below           |
 
@@ -119,6 +120,7 @@ For more granular control, the same options as resource instances are available:
 | `Tenant`             | Static value                               |
 | `TenantFromRoute`    | From a route parameter                     |
 | `TenantFromHeader`   | From a header                              |
+| `TenantFromQuery`    | From a query parameter                     |
 | `TenantFromBody`     | From the body. Nesting supported with dots |
 | `TenantProviderType` | Custom provider, explained below           |
 
