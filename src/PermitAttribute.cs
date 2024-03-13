@@ -35,6 +35,10 @@ public class PermitAttribute : Attribute, IPermitData
     /// <inheritdoc />
 
     public string? TenantFromQuery { get; set; }
+    
+    /// <inheritdoc />
+
+    public string? TenantFromClaim { get; set; }
 
     /// <inheritdoc />
     public string? TenantFromBody { get; set; }
@@ -54,6 +58,10 @@ public class PermitAttribute : Attribute, IPermitData
     /// <inheritdoc />
 
     public string? ResourceKeyFromQuery { get; set; }
+
+    
+    /// <inheritdoc />
+    public string? ResourceKeyFromClaim { get; set; }
 
     /// <inheritdoc />
     public string? ResourceKeyFromBody { get; set; }

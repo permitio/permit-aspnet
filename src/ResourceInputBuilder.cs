@@ -53,6 +53,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.ResourceKeyFromRoute,
                 data.ResourceKeyFromHeader,
                 data.ResourceKeyFromQuery,
+                data.ResourceKeyFromClaim,
                 data.ResourceKeyFromBody,
                 data.ResourceKeyProviderType,
                 _options.GlobalResourceKeyProviderType);
@@ -79,6 +80,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.TenantFromRoute,
                 data.TenantFromHeader,
                 data.TenantFromQuery,
+                data.TenantFromClaim,
                 data.TenantFromBody,
                 data.TenantProviderType,
                 _options.GlobalTenantProviderType);
@@ -98,6 +100,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             string? fromRoute,
             string? fromHeader,
             string? fromQuery,
+            string? fromClaim,
             string? fromBody,
             Type? providerType,
             Type? globalProviderType)
@@ -124,6 +127,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 return (true, value);
             }
 
+            if (!string.IsNullOrWhiteSpace(fromClaim))
+            {
+                var value = GetValueFromClaim(fromClaim);
+                return (true, value);
+            }
+            
             if (!string.IsNullOrWhiteSpace(fromBody))
             {
                 return (true, await GetValueFromBody(fromBody));
@@ -201,6 +210,11 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             return value;
         }
 
+        string? GetValueFromClaim(string claimType)
+        {
+            return httpContext.User.FindFirst(claimType)?.Value;
+        }
+        
         async Task<string?> GetValueFromBody(string jsonPropertyPath)
         {
             string requestBody;
