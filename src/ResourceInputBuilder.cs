@@ -52,6 +52,8 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.ResourceKey,
                 data.ResourceKeyFromRoute,
                 data.ResourceKeyFromHeader,
+                data.ResourceKeyFromQuery,
+                data.ResourceKeyFromClaim,
                 data.ResourceKeyFromBody,
                 data.ResourceKeyProviderType,
                 _options.GlobalResourceKeyProviderType);
@@ -77,6 +79,8 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.Tenant,
                 data.TenantFromRoute,
                 data.TenantFromHeader,
+                data.TenantFromQuery,
+                data.TenantFromClaim,
                 data.TenantFromBody,
                 data.TenantProviderType,
                 _options.GlobalTenantProviderType);
@@ -95,6 +99,8 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             string? staticValue,
             string? fromRoute,
             string? fromHeader,
+            string? fromQuery,
+            string? fromClaim,
             string? fromBody,
             Type? providerType,
             Type? globalProviderType)
@@ -115,6 +121,18 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 return (true, value);
             }
 
+            if (!string.IsNullOrWhiteSpace(fromQuery))
+            {
+                var value = GetValueFromQuery(fromQuery);
+                return (true, value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(fromClaim))
+            {
+                var value = GetValueFromClaim(fromClaim);
+                return (true, value);
+            }
+            
             if (!string.IsNullOrWhiteSpace(fromBody))
             {
                 return (true, await GetValueFromBody(fromBody));
@@ -185,6 +203,18 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             return value;
         }
 
+        string? GetValueFromQuery(string queryParameter)
+        {
+            _ = httpContext.Request.Query
+                .TryGetValue(queryParameter, out var value);
+            return value;
+        }
+
+        string? GetValueFromClaim(string claimType)
+        {
+            return httpContext.User.FindFirst(claimType)?.Value;
+        }
+        
         async Task<string?> GetValueFromBody(string jsonPropertyPath)
         {
             string requestBody;

@@ -31,6 +31,16 @@ public interface IPermitData
     public string? TenantFromHeader { get; set; }
     
     /// <summary>
+    /// Get or set the query parameter to use as tenant.
+    /// </summary>
+    public string? TenantFromQuery { get; set; }
+    
+    /// <summary>
+    /// Get or set the claim type to use as tenant.
+    /// </summary>
+    public string? TenantFromClaim { get; set; }
+    
+    /// <summary>
     /// Get or set the property path to get the tenant
     /// <example><code>tenant.key</code></example>
     /// </summary>
@@ -55,6 +65,16 @@ public interface IPermitData
     /// Get or set the header to use as resource key.
     /// </summary>
     public string? ResourceKeyFromHeader { get; set; }
+    
+    /// <summary>
+    /// Get or set the query parameter to use as resource key.
+    /// </summary>
+    public string? ResourceKeyFromQuery { get; set; }
+    
+    /// <summary>
+    /// Get or set the claim type to use as resource key.
+    /// </summary>
+    public string? ResourceKeyFromClaim { get; set; }
     
     /// <summary>
     /// Get or set the property path to get the resource key
