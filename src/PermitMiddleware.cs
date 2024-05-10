@@ -106,7 +106,7 @@ public sealed class PermitMiddleware
             return await serviceProvider.GetProviderUserKey(httpContext, _options.GlobalUserKeyProviderType);
         }
 
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ExtractUserId(httpContext);
         if (userId == null)
         {
             return null;
@@ -116,6 +116,25 @@ public sealed class PermitMiddleware
         var lastName = httpContext.User.FindFirst(ClaimTypes.Surname)?.Value ?? string.Empty;
         var email = httpContext.User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
         return new User(null, email, firstName, userId, lastName);
+    }
+
+    private static string? ExtractUserId(HttpContext httpContext)
+    {
+        var userId = httpContext.User.FindFirst(UserIdClaimTypes.Subject)?.Value;
+        if (userId != null)
+            return userId;
+
+        userId = httpContext.User.FindFirst(UserIdClaimTypes.NameIdentifier)?.Value;
+        if (userId != null)
+            return userId;
+
+        userId = httpContext.User.FindFirst(UserIdClaimTypes.FullyQualifiedId)?.Value;
+        if (userId != null)
+            return userId;
+
+        userId = httpContext.User.FindFirst(UserIdClaimTypes.ObjectIdentifier)?.Value;
+
+        return userId;
     }
 
     private async Task<bool> IsAuthorizedAsync(HttpContext httpContext,

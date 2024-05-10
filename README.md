@@ -68,7 +68,8 @@ public Article UpdateArticle([FromRoute] string id, [FromBody] Article article)
 ## How it works
 
 For each request, the middleware does:
-* Extract the user ID from the *JWT* token `NameIdentifier` claim (overridable)
+* Extract the user ID from the *JWT* token claims (overridable)
+  * The following claim types are checked in exact order `Sub`, `NameIdentifier`, `FullyQualifiedId`, `ObjectIdentifier`
 * Extract `action` and `resourceType` from the `Permit` attribute
   * Multiple attributes are run sequentially. Controller first, then action
 * Use the `HttpClientFactory` to get a `HttpClient` and call the PDP's `/allowed` endpoint 
