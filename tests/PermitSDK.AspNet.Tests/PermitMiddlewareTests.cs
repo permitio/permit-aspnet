@@ -105,8 +105,12 @@ public class PermitMiddlewareTests
         Assert.Equal(403, httpContext.Response.StatusCode);
     }
 
-    [Fact]
-    public async Task ActionOnResource_Ok()
+    [Theory]
+    [InlineData(UserIdClaimTypes.Subject)]
+    [InlineData(UserIdClaimTypes.NameIdentifier)]
+    [InlineData(UserIdClaimTypes.FullyQualifiedId)]
+    [InlineData(UserIdClaimTypes.ObjectIdentifier)]
+    public async Task ActionOnResource_Ok_UserKeyFromClaims(string userIdClaimType)
     {
         // Arrange
         var pdpService = GetPdpServiceFromAllowed(DefaultUserKey, TestAction, TestResourceType, null, true);
@@ -121,7 +125,7 @@ public class PermitMiddlewareTests
             _loggerMock.Object);
 
         var attribute = new PermitAttribute(TestAction, TestResourceType);
-        var httpContext = GetContextWithControllerAttributes(attribute);
+        var httpContext = GetContext(userIdClaimType: userIdClaimType, controllerAttributes: new[] { attribute });
         resourceInputBuilderMock.Setup(m => m.BuildAsync(attribute, httpContext))
             .ReturnsAsync(new Resource(null, null, null, null, attribute.ResourceType));
 
@@ -169,6 +173,7 @@ public class PermitMiddlewareTests
 
     private static HttpContext GetContext(
         bool withUser = true,
+        string userIdClaimType = UserIdClaimTypes.NameIdentifier,
         PermitAttribute[]? controllerAttributes = null,
         PermitAttribute[]? actionAttributes = null)
     {
@@ -210,7 +215,7 @@ public class PermitMiddlewareTests
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, DefaultUserKey)
+            new(userIdClaimType, DefaultUserKey)
         };
         var identity = new ClaimsIdentity(claims, "TestAuthType");
         httpContext.User = new ClaimsPrincipal(identity);
