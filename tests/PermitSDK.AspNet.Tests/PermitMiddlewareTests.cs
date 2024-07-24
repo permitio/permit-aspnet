@@ -26,10 +26,10 @@ public class PermitMiddlewareTests
         // Arrange
         var httpContext = new DefaultHttpContext();
         var pdpService = GetPdpService(_ => { });
-        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
+        var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
         var middleware = new PermitMiddleware(Success,
             pdpService,
-            resourceInputBuilderMock.Object,
+            resourceInputBuilderFactoryMock.Object,
             new PermitOptions(),
             _loggerMock.Object);
 
@@ -45,11 +45,11 @@ public class PermitMiddlewareTests
     {
         // Arrange
         var httpContext = GetContext(withUser: false);
-        var pdpService = GetPdpService(_ => {});
-        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
+        var pdpService = GetPdpService(_ => { });
+        var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
         var middleware = new PermitMiddleware(Success,
             pdpService,
-            resourceInputBuilderMock.Object,
+            resourceInputBuilderFactoryMock.Object,
             new PermitOptions(),
             _loggerMock.Object);
 
@@ -65,11 +65,11 @@ public class PermitMiddlewareTests
     {
         // Arrange
         var httpContext = GetContext();
-        var pdpService = GetPdpService(_ => {});
-        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
+        var pdpService = GetPdpService(_ => { });
+        var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
         var middleware = new PermitMiddleware(Success,
             pdpService,
-            resourceInputBuilderMock.Object,
+            resourceInputBuilderFactoryMock.Object,
             new PermitOptions(),
             _loggerMock.Object);
 
@@ -83,15 +83,17 @@ public class PermitMiddlewareTests
     [Fact]
     public async Task ActionOnResource_403()
     {
-        // Arrange
+        //Arrange
         var pdpService = GetPdpServiceFromAllowed(DefaultUserKey, TestAction, TestResourceType, null, false);
-        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
-        resourceInputBuilderMock.Setup(m => m.BuildAsync(It.Is<PermitAttribute>(a =>
+
+        var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
+        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<PermitAttribute>(a =>
                 a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
             .ReturnsAsync(new Resource(null, null, null, null, TestResourceType));
+
         var middleware = new PermitMiddleware(Success,
             pdpService,
-            resourceInputBuilderMock.Object,
+            resourceInputBuilderFactoryMock.Object,
             new PermitOptions(),
             _loggerMock.Object);
 
@@ -114,19 +116,22 @@ public class PermitMiddlewareTests
     {
         // Arrange
         var pdpService = GetPdpServiceFromAllowed(DefaultUserKey, TestAction, TestResourceType, null, true);
-        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
-        resourceInputBuilderMock.Setup(m => m.BuildAsync(It.Is<PermitAttribute>(a =>
+
+        var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
+        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<PermitAttribute>(a =>
                 a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
             .ReturnsAsync(new Resource(null, null, null, null, TestResourceType));
+
         var middleware = new PermitMiddleware(Success,
             pdpService,
-            resourceInputBuilderMock.Object,
+            resourceInputBuilderFactoryMock.Object,
             new PermitOptions(),
             _loggerMock.Object);
 
         var attribute = new PermitAttribute(TestAction, TestResourceType);
         var httpContext = GetContext(userIdClaimType: userIdClaimType, controllerAttributes: new[] { attribute });
-        resourceInputBuilderMock.Setup(m => m.BuildAsync(attribute, httpContext))
+
+        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(attribute, httpContext))
             .ReturnsAsync(new Resource(null, null, null, null, attribute.ResourceType));
 
         // Act
@@ -141,14 +146,16 @@ public class PermitMiddlewareTests
     {
         // Arrange
         var pdpService = GetPdpServiceFromAllowed(ProviderUserKey, TestAction, TestResourceType, null, true);
-        var resourceInputBuilderMock = new Mock<IResourceInputBuilder>();
-        resourceInputBuilderMock.Setup(m => m.BuildAsync(It.Is<PermitAttribute>(a =>
+
+        var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
+        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<PermitAttribute>(a =>
                 a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
             .ReturnsAsync(new Resource(null, null, null, null, TestResourceType));
+
         var middleware = new PermitMiddleware(Success,
             pdpService,
-            resourceInputBuilderMock.Object,
-            new PermitOptions 
+            resourceInputBuilderFactoryMock.Object,
+            new PermitOptions
             {
                 GlobalUserKeyProviderType = typeof(TestUserKeyProvider)
             },
@@ -156,7 +163,8 @@ public class PermitMiddlewareTests
 
         var attribute = new PermitAttribute(TestAction, TestResourceType);
         var httpContext = GetContextWithControllerAttributes(attribute);
-        resourceInputBuilderMock.Setup(m => m.BuildAsync(attribute, httpContext))
+
+        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(attribute, httpContext))
             .ReturnsAsync(new Resource(null, null, null, null, attribute.ResourceType));
 
         // Act
@@ -241,7 +249,8 @@ public class PermitMiddlewareTests
         }
     }
 
-    private static PdpService GetPdpServiceFromAllowed(string userKey, string action, string type, string? resourceKey, bool allowed)
+    private static PdpService GetPdpServiceFromAllowed(string userKey, string action, string type, string? resourceKey,
+        bool allowed)
     {
         var serializationOptions = new JsonSerializerOptions
         {
@@ -262,20 +271,21 @@ public class PermitMiddlewareTests
                         allowedRequest.Resource.Type == type &&
                         allowedRequest.Resource.Key == resourceKey &&
                         allowedRequest.User.Key == userKey && allowed;
-                    
+
                     var response = new HttpResponseMessage();
-                    var content = JsonSerializer.Serialize(new AuthorizationResult(responseAllowed, null, null, null), serializationOptions);
+                    var content = JsonSerializer.Serialize(new AuthorizationResult(responseAllowed, null, null, null),
+                        serializationOptions);
                     response.Content = new StringContent(content);
                     return response;
                 })
                 .Verifiable();
         });
     }
-    
+
     private static PdpService GetPdpService(Action<Mock<HttpMessageHandler>> mockSetup)
     {
         var handlerMock = new Mock<HttpMessageHandler>();
-        mockSetup(handlerMock); 
+        mockSetup(handlerMock);
         var httpClient = new HttpClient(handlerMock.Object);
         httpClient.BaseAddress = new Uri("http://localhost");
         return new PdpService(httpClient);

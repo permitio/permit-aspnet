@@ -74,13 +74,12 @@ public static class PermitExtensions
         }
 
 
-        IResourceInputBuilder resourceInputBuilder = new ResourceInputBuilder(
-            options, applicationBuilder.ApplicationServices);
-        var pdp = applicationBuilder.ApplicationServices.GetService<PdpService>();
+		Func<IResourceInputBuilder> resourceInputBuilderFactory = () => new ResourceInputBuilder(options, applicationBuilder.ApplicationServices);
+		var pdp = applicationBuilder.ApplicationServices.GetService<PdpService>();
         var logger = applicationBuilder.ApplicationServices.GetService<ILogger<PermitMiddleware>>();
         
         return applicationBuilder.UseMiddleware<PermitMiddleware>(
-            pdp, resourceInputBuilder, options, logger);
+            pdp, resourceInputBuilderFactory, options, logger);
     }
     
     internal static Task<User?> GetProviderUserKey(this IServiceProvider serviceProvider,

@@ -16,8 +16,8 @@ public sealed class PermitMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly PdpService _pdpService;
-    private readonly IResourceInputBuilder _resourceInputBuilder;
-    private readonly PermitOptions _options;
+	private readonly Func<IResourceInputBuilder> _resourceInputBuilderFactory;
+	private readonly PermitOptions _options;
     private readonly ILogger<PermitMiddleware> _logger;
 
     /// <summary>
@@ -25,19 +25,19 @@ public sealed class PermitMiddleware
     /// </summary>
     /// <param name="next">Request delegate</param>
     /// <param name="pdpService">Service to call PDP endpoints</param>
-    /// <param name="resourceInputBuilder">Builder for resource input</param>
+    /// <param name="resourceInputBuilderFactory">Builder for resource input</param>
     /// <param name="options">Permit options</param>
     /// <param name="logger">Middleware logger</param>
     public PermitMiddleware(
         RequestDelegate next,
-        PdpService pdpService, 
-        IResourceInputBuilder resourceInputBuilder,
-        PermitOptions options,
+        PdpService pdpService,
+		Func<IResourceInputBuilder> resourceInputBuilderFactory,
+		PermitOptions options,
         ILogger<PermitMiddleware> logger)
     {
         _next = next;
         _pdpService = pdpService;
-        _resourceInputBuilder = resourceInputBuilder;
+        _resourceInputBuilderFactory = resourceInputBuilderFactory;
         _options = options;
         _logger = logger;
     }
@@ -145,7 +145,8 @@ public sealed class PermitMiddleware
             return false;
         }
 
-        var resourceInput = await _resourceInputBuilder.BuildAsync(data, httpContext);
+        var resourceInputBuilder = _resourceInputBuilderFactory();
+		var resourceInput = await resourceInputBuilder.BuildAsync(data, httpContext);
         
         // Call PDP
         var request = new AuthorizationQuery(data.Action, null, resourceInput, null, userKey);
