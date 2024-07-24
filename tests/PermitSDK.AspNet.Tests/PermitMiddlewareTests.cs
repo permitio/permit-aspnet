@@ -83,7 +83,7 @@ public class PermitMiddlewareTests
     [Fact]
     public async Task ActionOnResource_403()
     {
-        //Arrange
+        // Arrange
         var pdpService = GetPdpServiceFromAllowed(DefaultUserKey, TestAction, TestResourceType, null, false);
 
         var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
