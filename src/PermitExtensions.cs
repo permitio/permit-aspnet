@@ -48,13 +48,19 @@ public static class PermitExtensions
         }
 
         services
-            .AddSingleton(options)
-            .AddHttpClient<PdpService>(client =>
-            {
-                client.BaseAddress = new Uri(options.PdpUrl);
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.ApiKey}");
-                client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
-            });
+            .AddSingleton(options);
+        var httpClientBuilder = services.AddHttpClient<PdpService>(client =>
+        {
+            client.BaseAddress = new Uri(options.PdpUrl);
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.ApiKey}");
+            client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
+        });
+        
+        if (options.BeforeSendCallback != null)
+        {
+            httpClientBuilder.AddHttpMessageHandler(_ => new InternalDelegatingHandler(options.BeforeSendCallback));
+        }
+
         return services;
     }
 
