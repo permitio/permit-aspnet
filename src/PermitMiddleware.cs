@@ -16,7 +16,7 @@ public sealed class PermitMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly PdpService _pdpService;
-    private readonly IResourceInputBuilder _resourceInputBuilder;
+    private readonly Func<IResourceInputBuilder> _resourceInputBuilderFactory;
     private readonly PermitOptions _options;
     private readonly ILogger<PermitMiddleware> _logger;
 
@@ -25,23 +25,23 @@ public sealed class PermitMiddleware
     /// </summary>
     /// <param name="next">Request delegate</param>
     /// <param name="pdpService">Service to call PDP endpoints</param>
-    /// <param name="resourceInputBuilder">Builder for resource input</param>
+    /// <param name="resourceInputBuilderFactory">Builder for resource input</param>
     /// <param name="options">Permit options</param>
     /// <param name="logger">Middleware logger</param>
     public PermitMiddleware(
         RequestDelegate next,
-        PdpService pdpService, 
-        IResourceInputBuilder resourceInputBuilder,
+        PdpService pdpService,
+        Func<IResourceInputBuilder> resourceInputBuilderFactory,
         PermitOptions options,
         ILogger<PermitMiddleware> logger)
     {
         _next = next;
         _pdpService = pdpService;
-        _resourceInputBuilder = resourceInputBuilder;
+        _resourceInputBuilderFactory = resourceInputBuilderFactory;
         _options = options;
         _logger = logger;
     }
-    
+
     /// <summary>
     /// Invoke the middleware
     /// </summary>
@@ -65,7 +65,7 @@ public sealed class PermitMiddleware
             await _next(httpContext);
             return;
         }
-        
+
         var permitMedata = GetPermitEndpointMetadata(endpoint);
         foreach (var data in permitMedata)
         {
@@ -145,18 +145,20 @@ public sealed class PermitMiddleware
             return false;
         }
 
-        var resourceInput = await _resourceInputBuilder.BuildAsync(data, httpContext);
-        
+        var resourceInputBuilder = _resourceInputBuilderFactory();
+        var resourceInput = await resourceInputBuilder.BuildAsync(data, httpContext);
+
         // Call PDP
         var request = new AuthorizationQuery(data.Action, null, resourceInput, null, userKey);
         var response = await _pdpService.AllowedAsync(request);
-        if (response?.Debug is JsonElement debugNode && 
+        if (response?.Debug is JsonElement debugNode &&
             debugNode.TryGetProperty("rbac", out var rbacNode) &&
             rbacNode.TryGetProperty("reason", out var reasonNode))
         {
             var reason = reasonNode.GetString();
             _logger.LogDebug("RBAC reason: {Reason}", reason); // response.Debug.Rbac.Reason);
         }
+
         return response?.Allow ?? false;
     }
 }

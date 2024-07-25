@@ -30,7 +30,7 @@ public static class PermitExtensions
         configureOptions?.Invoke(options);
         return services.AddPermit(options);
     }
-    
+
     /// <summary>
     /// Register the Permit middleware.
     /// </summary>
@@ -46,7 +46,7 @@ public static class PermitExtensions
         {
             throw new InvalidOperationException("API key not set.");
         }
-        
+
         services
             .AddSingleton(options)
             .AddHttpClient<PdpService>(client =>
@@ -74,22 +74,22 @@ public static class PermitExtensions
         }
 
 
-        IResourceInputBuilder resourceInputBuilder = new ResourceInputBuilder(
-            options, applicationBuilder.ApplicationServices);
+        Func<IResourceInputBuilder> resourceInputBuilderFactory =
+            () => new ResourceInputBuilder(options, applicationBuilder.ApplicationServices);
         var pdp = applicationBuilder.ApplicationServices.GetService<PdpService>();
         var logger = applicationBuilder.ApplicationServices.GetService<ILogger<PermitMiddleware>>();
-        
+
         return applicationBuilder.UseMiddleware<PermitMiddleware>(
-            pdp, resourceInputBuilder, options, logger);
+            pdp, resourceInputBuilderFactory, options, logger);
     }
-    
+
     internal static Task<User?> GetProviderUserKey(this IServiceProvider serviceProvider,
         HttpContext httpContext, Type providerType)
-    { 
+    {
         return serviceProvider.RunProviderAsync<IPermitUserKeyProvider, User>(
             providerType, provider => provider.GetUserKeyAsync(httpContext));
     }
-    
+
     internal static Task<string?> GetProviderValue(this IServiceProvider serviceProvider,
         HttpContext httpContext, Type providerType)
     {
@@ -103,7 +103,7 @@ public static class PermitExtensions
         return serviceProvider.RunProviderAsync<IPermitValuesProvider, Dictionary<string, object>>(
             providerType, provider => provider.GetValues(httpContext));
     }
-    
+
     private static async Task<TResult?> RunProviderAsync<TProvider, TResult>(
         this IServiceProvider serviceProvider,
         Type providerType,
