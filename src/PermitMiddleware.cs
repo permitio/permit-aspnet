@@ -57,8 +57,11 @@ public sealed class PermitMiddleware
             return;
         }
 
-        // Get user key
-        var userKey = await GetUserKeyAsync(httpContext, serviceProvider);
+        //With an intention to read request multiple times, enable buffering
+        httpContext.Request.EnableBuffering();
+
+		// Get user key
+		var userKey = await GetUserKeyAsync(httpContext, serviceProvider);
         if (userKey == null)
         {
             _logger.LogTrace("User key not found.");
