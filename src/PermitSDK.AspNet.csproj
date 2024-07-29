@@ -10,9 +10,8 @@
         <Authors>Matteo Bortolazzo</Authors>
         <RepositoryUrl>https://github.com/permitio/permit-aspnet</RepositoryUrl>
 	    <Version>1.0.3</Version>
-	    <PackageReleaseNotes>Permit middleware - Fix PermitData - RequestFromBody</PackageReleaseNotes>
-
-        <PackageReadmeFile>README.md</PackageReadmeFile>
+	    <PackageReleaseNotes>Resource Key Instance-ResourceFromBody-Fix issue of request body not accessible post reading data from httpContext.Request.Body using a StreamReader</PackageReleaseNotes>
+	    <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
     </PropertyGroup>
     
