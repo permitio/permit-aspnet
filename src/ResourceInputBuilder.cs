@@ -13,7 +13,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
     private string? _tenant;
     private Dictionary<string, object>? _attributes;
     private Dictionary<string, object>? _context;
-    
+
     private readonly IServiceProvider _serviceProvider;
 
     public ResourceInputBuilder(
@@ -132,7 +132,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 var value = GetValueFromClaim(fromClaim);
                 return (true, value);
             }
-            
+
             if (!string.IsNullOrWhiteSpace(fromBody))
             {
                 return (true, await GetValueFromBody(fromBody));
@@ -214,20 +214,22 @@ internal class ResourceInputBuilder : IResourceInputBuilder
         {
             return httpContext.User.FindFirst(claimType)?.Value;
         }
-        
+
         async Task<string?> GetValueFromBody(string jsonPropertyPath)
         {
             string requestBody;
-            using (var reader = new StreamReader(httpContext.Request.Body))
+
+            using (var reader = new StreamReader(httpContext.Request.Body, leaveOpen: true))
             {
                 requestBody = await reader.ReadToEndAsync();
+                httpContext.Request.Body.Position = 0;
             }
 
             var jsonDocument = JsonDocument.Parse(requestBody);
             var node = GetJsonElement(jsonDocument.RootElement, jsonPropertyPath);
             return GetJsonElementValue(node);
         }
-        
+
         static JsonElement GetJsonElement(JsonElement jsonElement, string path)
         {
             if (jsonElement.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
@@ -248,14 +250,14 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
             return jsonElement;
         }
-        
+
         static string? GetJsonElementValue(JsonElement jsonElement)
         {
             return
                 jsonElement.ValueKind != JsonValueKind.Null &&
-                jsonElement.ValueKind != JsonValueKind.Undefined ?
-                    jsonElement.ToString() :
-                    default;
-        } 
+                jsonElement.ValueKind != JsonValueKind.Undefined
+                    ? jsonElement.ToString()
+                    : default;
+        }
     }
 }

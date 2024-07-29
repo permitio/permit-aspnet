@@ -57,6 +57,9 @@ public sealed class PermitMiddleware
             return;
         }
 
+        //With an intention to read request multiple times, enable buffering
+        httpContext.Request.EnableBuffering();
+
         // Get user key
         var userKey = await GetUserKeyAsync(httpContext, serviceProvider);
         if (userKey == null)
