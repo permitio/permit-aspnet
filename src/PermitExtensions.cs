@@ -48,14 +48,21 @@ public static class PermitExtensions
         }
 
         services
-            .AddSingleton(options)
-            .AddHttpClient<PdpService>(client =>
-            {
-                client.BaseAddress = new Uri(options.PdpUrl);
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.ApiKey}");
-                client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
-            });
-        return services;
+	        .AddSingleton(options);
+
+        var httpClientBuilder = services.AddHttpClient<PdpService>(client =>
+        {
+	        client.BaseAddress = new Uri(options.PdpUrl);
+	        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.ApiKey}");
+	        client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
+        });
+
+        if (options.BeforeSendCallbackAsync != null)
+        {
+	        httpClientBuilder.AddHttpMessageHandler(_ => new InternalDelegatingHandler(options.BeforeSendCallbackAsync));
+        }
+
+		return services;
     }
 
     /// <summary>
@@ -72,7 +79,6 @@ public static class PermitExtensions
         {
             throw new InvalidOperationException("Permit middleware not registered.");
         }
-
 
         Func<IResourceInputBuilder> resourceInputBuilderFactory =
             () => new ResourceInputBuilder(options);

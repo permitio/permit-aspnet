@@ -53,4 +53,9 @@ public class PermitOptions
     /// Get or set the type of <see cref="IPermitUserKeyProvider"/> to use to get the user key
     /// </summary>
     public Type? GlobalUserKeyProviderType { get; set; }
+
+    /// <summary>
+    /// Function called before any request is sent to the PDP
+    /// </summary>
+    public Func<HttpRequestMessage, Task>? BeforeSendCallbackAsync { get; set; }
 }
