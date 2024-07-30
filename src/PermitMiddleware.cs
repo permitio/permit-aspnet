@@ -61,7 +61,7 @@ public sealed class PermitMiddleware
         httpContext.Request.EnableBuffering();
 
         // Get user key
-        var userKey = await GetUserKeyAsync(httpContext, serviceProvider);
+        var userKey = await GetUserKeyAsync(httpContext);
         if (userKey == null)
         {
             _logger.LogTrace("User key not found.");
@@ -102,11 +102,11 @@ public sealed class PermitMiddleware
         return controllerAttributes.Concat(actionAttributes).ToArray();
     }
 
-    private async Task<User?> GetUserKeyAsync(HttpContext httpContext, IServiceProvider serviceProvider)
+    private async Task<User?> GetUserKeyAsync(HttpContext httpContext)
     {
         if (_options.GlobalUserKeyProviderType != null)
         {
-            return await serviceProvider.GetProviderUserKey(httpContext, _options.GlobalUserKeyProviderType);
+            return await PermitExtensions.GetProviderUserKey(httpContext, _options.GlobalUserKeyProviderType);
         }
 
         var userId = ExtractUserId(httpContext);

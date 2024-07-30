@@ -14,14 +14,10 @@ internal class ResourceInputBuilder : IResourceInputBuilder
     private Dictionary<string, object>? _attributes;
     private Dictionary<string, object>? _context;
 
-    private readonly IServiceProvider _serviceProvider;
-
     public ResourceInputBuilder(
-        PermitOptions options,
-        IServiceProvider serviceProvider)
+        PermitOptions options)
     {
         _options = options;
-        _serviceProvider = serviceProvider;
         _tenant = options.UseDefaultTenantIfEmpty
             ? options.DefaultTenant
             : null;
@@ -140,13 +136,13 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
             if (providerType != null)
             {
-                var value = await _serviceProvider.GetProviderValue(httpContext, providerType);
+                var value = await PermitExtensions.GetProviderValue(httpContext, providerType);
                 return (true, value);
             }
 
             if (globalProviderType != null)
             {
-                var value = await _serviceProvider.GetProviderValue(httpContext, globalProviderType);
+                var value = await PermitExtensions.GetProviderValue(httpContext, globalProviderType);
                 return (true, value);
             }
 
@@ -161,7 +157,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             }
 
             var providerType = data.AttributesProviderType ?? _options.GlobalAttributesProviderType;
-            var attributes = await _serviceProvider.GetProviderValues(httpContext, providerType!);
+            var attributes = await PermitExtensions.GetProviderValues(httpContext, providerType!);
             if (attributes == null)
             {
                 _isFailed = true;
@@ -180,7 +176,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             }
 
             var providerType = data.ContextProviderType ?? _options.GlobalContextProviderType;
-            var context = await _serviceProvider.GetProviderValues(httpContext, providerType!);
+            var context = await PermitExtensions.GetProviderValues(httpContext, providerType!);
             if (context == null)
             {
                 _isFailed = true;

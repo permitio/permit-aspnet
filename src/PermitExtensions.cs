@@ -75,7 +75,7 @@ public static class PermitExtensions
 
 
         Func<IResourceInputBuilder> resourceInputBuilderFactory =
-            () => new ResourceInputBuilder(options, applicationBuilder.ApplicationServices);
+            () => new ResourceInputBuilder(options);
         var pdp = applicationBuilder.ApplicationServices.GetService<PdpService>();
         var logger = applicationBuilder.ApplicationServices.GetService<ILogger<PermitMiddleware>>();
 
@@ -83,31 +83,26 @@ public static class PermitExtensions
             pdp, resourceInputBuilderFactory, options, logger);
     }
 
-    internal static Task<User?> GetProviderUserKey(this IServiceProvider serviceProvider,
-        HttpContext httpContext, Type providerType)
+    internal static Task<User?> GetProviderUserKey(HttpContext httpContext, Type providerType)
     {
-        return serviceProvider.RunProviderAsync<IPermitUserKeyProvider, User>(
-            providerType, provider => provider.GetUserKeyAsync(httpContext));
+        return RunProviderAsync<IPermitUserKeyProvider, User>(
+            providerType, provider => provider.GetUserKeyAsync(httpContext), httpContext);
     }
 
-    internal static Task<string?> GetProviderValue(this IServiceProvider serviceProvider,
-        HttpContext httpContext, Type providerType)
+    internal static Task<string?> GetProviderValue(HttpContext httpContext, Type providerType)
     {
-        return serviceProvider.RunProviderAsync<IPermitValueProvider, string>(
-            providerType, provider => provider.GetValueAsync(httpContext));
+        return RunProviderAsync<IPermitValueProvider, string>(
+            providerType, provider => provider.GetValueAsync(httpContext), httpContext);
     }
 
-    internal static Task<Dictionary<string, object>?> GetProviderValues(this IServiceProvider serviceProvider,
-        HttpContext httpContext, Type providerType)
+    internal static Task<Dictionary<string, object>?> GetProviderValues(HttpContext httpContext, Type providerType)
     {
-        return serviceProvider.RunProviderAsync<IPermitValuesProvider, Dictionary<string, object>>(
-            providerType, provider => provider.GetValues(httpContext));
+        return RunProviderAsync<IPermitValuesProvider, Dictionary<string, object>>(
+            providerType, provider => provider.GetValues(httpContext), httpContext);
     }
 
-    private static async Task<TResult?> RunProviderAsync<TProvider, TResult>(
-        this IServiceProvider serviceProvider,
-        Type providerType,
-        Func<TProvider, Task<TResult>> getValues)
+    private static async Task<TResult?> RunProviderAsync<TProvider, TResult>(Type providerType,
+        Func<TProvider, Task<TResult>> getValues, HttpContext httpContext)
         where TProvider : class
         where TResult : class
     {
@@ -124,7 +119,8 @@ public static class PermitExtensions
         // Otherwise, use the service provider to create an instance
         var provider = hasParameterlessConstructor
             ? Activator.CreateInstance(providerType) as TProvider
-            : serviceProvider.GetService(providerType) as TProvider;
+            : httpContext.RequestServices.GetService(providerType) as TProvider;
+
         if (provider == null)
         {
             return null;
