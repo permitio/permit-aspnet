@@ -136,7 +136,6 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
             if (providerType != null)
             {
-
                 var value = await httpContext.GetProviderValue(providerType);
                 return (true, value);
             }

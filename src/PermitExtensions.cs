@@ -48,21 +48,22 @@ public static class PermitExtensions
         }
 
         services
-	        .AddSingleton(options);
+            .AddSingleton(options);
 
         var httpClientBuilder = services.AddHttpClient<PdpService>(client =>
         {
-	        client.BaseAddress = new Uri(options.PdpUrl);
-	        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.ApiKey}");
-	        client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
+            client.BaseAddress = new Uri(options.PdpUrl);
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.ApiKey}");
+            client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
         });
 
         if (options.BeforeSendCallbackAsync != null)
         {
-	        httpClientBuilder.AddHttpMessageHandler(_ => new InternalDelegatingHandler(options.BeforeSendCallbackAsync));
+            httpClientBuilder.AddHttpMessageHandler(_ =>
+                new InternalDelegatingHandler(options.BeforeSendCallbackAsync));
         }
 
-		return services;
+        return services;
     }
 
     /// <summary>
@@ -95,11 +96,11 @@ public static class PermitExtensions
             providerType, provider => provider.GetUserKeyAsync(httpContext), httpContext);
     }
 
-	internal static Task<string?> GetProviderValue(this HttpContext httpContext, Type providerType)
-	{
-		return RunProviderAsync<IPermitValueProvider, string>(
-			providerType, provider => provider.GetValueAsync(httpContext), httpContext);
-	}
+    internal static Task<string?> GetProviderValue(this HttpContext httpContext, Type providerType)
+    {
+        return RunProviderAsync<IPermitValueProvider, string>(
+            providerType, provider => provider.GetValueAsync(httpContext), httpContext);
+    }
 
     internal static Task<Dictionary<string, object>?> GetProviderValues(this HttpContext httpContext, Type providerType)
     {
