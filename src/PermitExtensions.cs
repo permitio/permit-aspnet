@@ -83,19 +83,19 @@ public static class PermitExtensions
             pdp, resourceInputBuilderFactory, options, logger);
     }
 
-    internal static Task<User?> GetProviderUserKey(HttpContext httpContext, Type providerType)
+    internal static Task<User?> GetProviderUserKey(this HttpContext httpContext, Type providerType)
     {
         return RunProviderAsync<IPermitUserKeyProvider, User>(
             providerType, provider => provider.GetUserKeyAsync(httpContext), httpContext);
     }
 
-    internal static Task<string?> GetProviderValue(HttpContext httpContext, Type providerType)
-    {
-        return RunProviderAsync<IPermitValueProvider, string>(
-            providerType, provider => provider.GetValueAsync(httpContext), httpContext);
-    }
+	internal static Task<string?> GetProviderValue(this HttpContext httpContext, Type providerType)
+	{
+		return RunProviderAsync<IPermitValueProvider, string>(
+			providerType, provider => provider.GetValueAsync(httpContext), httpContext);
+	}
 
-    internal static Task<Dictionary<string, object>?> GetProviderValues(HttpContext httpContext, Type providerType)
+    internal static Task<Dictionary<string, object>?> GetProviderValues(this HttpContext httpContext, Type providerType)
     {
         return RunProviderAsync<IPermitValuesProvider, Dictionary<string, object>>(
             providerType, provider => provider.GetValues(httpContext), httpContext);

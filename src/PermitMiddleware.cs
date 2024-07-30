@@ -106,7 +106,7 @@ public sealed class PermitMiddleware
     {
         if (_options.GlobalUserKeyProviderType != null)
         {
-            return await PermitExtensions.GetProviderUserKey(httpContext, _options.GlobalUserKeyProviderType);
+            return await httpContext.GetProviderUserKey(_options.GlobalUserKeyProviderType);
         }
 
         var userId = ExtractUserId(httpContext);

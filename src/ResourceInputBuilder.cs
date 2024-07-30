@@ -136,13 +136,14 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
             if (providerType != null)
             {
-                var value = await PermitExtensions.GetProviderValue(httpContext, providerType);
+
+                var value = await httpContext.GetProviderValue(providerType);
                 return (true, value);
             }
 
             if (globalProviderType != null)
             {
-                var value = await PermitExtensions.GetProviderValue(httpContext, globalProviderType);
+                var value = await httpContext.GetProviderValue(globalProviderType);
                 return (true, value);
             }
 
@@ -157,7 +158,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             }
 
             var providerType = data.AttributesProviderType ?? _options.GlobalAttributesProviderType;
-            var attributes = await PermitExtensions.GetProviderValues(httpContext, providerType!);
+            var attributes = await httpContext.GetProviderValues(providerType!);
             if (attributes == null)
             {
                 _isFailed = true;
@@ -176,7 +177,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
             }
 
             var providerType = data.ContextProviderType ?? _options.GlobalContextProviderType;
-            var context = await PermitExtensions.GetProviderValues(httpContext, providerType!);
+            var context = await httpContext.GetProviderValues(providerType!);
             if (context == null)
             {
                 _isFailed = true;
