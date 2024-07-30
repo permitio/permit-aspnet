@@ -9,7 +9,7 @@
         <WarningsAsErrors>$(WarningsAsErrors);1591</WarningsAsErrors>
         <Authors>Matteo Bortolazzo</Authors>
         <RepositoryUrl>https://github.com/permitio/permit-aspnet</RepositoryUrl>
-        <Version>1.1.0</Version>
+        <Version>1.2.0</Version>
         <PackageReleaseNotes>Add Callback before any request to PDP and fix issue while resolving the service for custom providers</PackageReleaseNotes>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
