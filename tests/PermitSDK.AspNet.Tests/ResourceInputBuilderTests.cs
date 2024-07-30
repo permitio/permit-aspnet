@@ -14,10 +14,12 @@ public class ResourceInputBuilderTests
     private const string TestType = "testType";
     private const string TestResourceKey = "testKey";
     private const string TestTenant = "testTenant";
+
     private static readonly Dictionary<string, object> TestAttributes = new()
     {
         { "testAttrKey", "testAttrValue" }
     };
+
     private static readonly Dictionary<string, object> TestContext = new()
     {
         { "testCxtKey", "testCtxValue" }
@@ -35,10 +37,10 @@ public class ResourceInputBuilderTests
             ResourceKey = TestResourceKey
         };
         var httpContext = new DefaultHttpContext();
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
@@ -65,16 +67,16 @@ public class ResourceInputBuilderTests
         var featureCollection = new FeatureCollection();
         featureCollection.Set<IRouteValuesFeature>(endpointFeature);
         var httpContext = new DefaultHttpContext(featureCollection);
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestResourceKey, result.Key);
     }
-    
+
     [Fact]
     public async Task ResourceKey_FromHeader()
     {
@@ -95,16 +97,16 @@ public class ResourceInputBuilderTests
                 }
             }
         };
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestResourceKey, result.Key);
     }
-    
+
     [Fact]
     public async Task ResourceKey_FromBody()
     {
@@ -132,16 +134,16 @@ public class ResourceInputBuilderTests
                 Body = memoryStream
             }
         };
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestResourceKey, result.Key);
     }
-    
+
     [Fact]
     public async Task ResourceKey_Provider()
     {
@@ -152,56 +154,61 @@ public class ResourceInputBuilderTests
             ResourceKeyProviderType = typeof(ResourceKeyProvider)
         };
         var httpContext = new DefaultHttpContext();
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestResourceKey, result.Key);
     }
-    
+
     [Fact]
     public async Task ResourceKey_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(configureService: services => services
-            .AddSingleton<ResourceKeyProvider>()
-            .AddSingleton<ResourceKeyProviderDi>());
+        var builder = GetBuilder();
         var attribute = new PermitAttribute(TestAction, TestType)
         {
             ResourceKeyProviderType = typeof(ResourceKeyProviderDi)
         };
         var httpContext = new DefaultHttpContext();
-        
+
+        var configureService = new Action<ServiceCollection>(services => services
+            .AddSingleton<ResourceKeyProvider>()
+            .AddSingleton<ResourceKeyProviderDi>());
+        httpContext.RequestServices = BuildServiceProvider(configureService);
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestResourceKey, result.Key);
     }
-    
+
     [Fact]
     public async Task ResourceKey_Provider_Global()
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitOptions 
+            options: new PermitOptions
             {
                 GlobalResourceKeyProviderType = typeof(ResourceKeyProviderDi)
-            },
-            configureService: services => services
-                .AddSingleton<ResourceKeyProvider>()
-                .AddSingleton<ResourceKeyProviderDi>());
+            });
         var attribute = new PermitAttribute(TestAction, TestType);
         var httpContext = new DefaultHttpContext();
-        
+
+        var configureService = new Action<ServiceCollection>(services => services
+            .AddSingleton<ResourceKeyProvider>()
+            .AddSingleton<ResourceKeyProviderDi>());
+        httpContext.RequestServices = BuildServiceProvider(configureService);
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
@@ -215,7 +222,7 @@ public class ResourceInputBuilderTests
             return Task.FromResult(TestResourceKey);
         }
     }
-    
+
     private class ResourceKeyProviderDi : IPermitValueProvider
     {
         private readonly ResourceKeyProvider _provider;
@@ -224,7 +231,7 @@ public class ResourceInputBuilderTests
         {
             _provider = provider;
         }
-        
+
         public Task<string> GetValueAsync(HttpContext httpContext)
         {
             return _provider.GetValueAsync(httpContext);
@@ -245,10 +252,10 @@ public class ResourceInputBuilderTests
             Tenant = TestTenant
         };
         var httpContext = new DefaultHttpContext();
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
@@ -275,16 +282,16 @@ public class ResourceInputBuilderTests
         var featureCollection = new FeatureCollection();
         featureCollection.Set<IRouteValuesFeature>(endpointFeature);
         var httpContext = new DefaultHttpContext(featureCollection);
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestTenant, result.Tenant);
     }
-    
+
     [Fact]
     public async Task Tenant_FromHeader()
     {
@@ -305,16 +312,16 @@ public class ResourceInputBuilderTests
                 }
             }
         };
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestTenant, result.Tenant);
     }
-    
+
     [Fact]
     public async Task Tenant_FromBody()
     {
@@ -342,16 +349,16 @@ public class ResourceInputBuilderTests
                 Body = memoryStream
             }
         };
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestTenant, result.Tenant);
     }
-    
+
     [Fact]
     public async Task Tenant_Provider()
     {
@@ -362,56 +369,60 @@ public class ResourceInputBuilderTests
             TenantProviderType = typeof(TenantProvider)
         };
         var httpContext = new DefaultHttpContext();
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestTenant, result.Tenant);
     }
-    
+
     [Fact]
     public async Task Tenant_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(configureService: services => services
-            .AddSingleton<TenantProvider>()
-            .AddSingleton<TenantProviderDi>());
+        var builder = GetBuilder();
         var attribute = new PermitAttribute(TestAction, TestType)
         {
             TenantProviderType = typeof(TenantProviderDi)
         };
         var httpContext = new DefaultHttpContext();
-        
+
+        var configureService = new Action<ServiceCollection>(services => services
+            .AddSingleton<TenantProvider>()
+            .AddSingleton<TenantProviderDi>());
+        httpContext.RequestServices = BuildServiceProvider(configureService);
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestTenant, result.Tenant);
     }
-    
+
     [Fact]
     public async Task Tenant_Provider_Global()
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitOptions 
+            options: new PermitOptions
             {
                 GlobalTenantProviderType = typeof(TenantProviderDi)
-            },
-            configureService: services => services
-                .AddSingleton<TenantProvider>()
-                .AddSingleton<TenantProviderDi>());
+            });
         var attribute = new PermitAttribute(TestAction, TestType);
         var httpContext = new DefaultHttpContext();
-        
+
+        var configureService = new Action<ServiceCollection>(services => services
+            .AddSingleton<TenantProvider>()
+            .AddSingleton<TenantProviderDi>());
+        httpContext.RequestServices = BuildServiceProvider(configureService);
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
@@ -425,7 +436,7 @@ public class ResourceInputBuilderTests
             return Task.FromResult(TestTenant);
         }
     }
-    
+
     private class TenantProviderDi : IPermitValueProvider
     {
         private readonly TenantProvider _provider;
@@ -434,7 +445,7 @@ public class ResourceInputBuilderTests
         {
             _provider = provider;
         }
-        
+
         public Task<string> GetValueAsync(HttpContext httpContext)
         {
             return _provider.GetValueAsync(httpContext);
@@ -455,56 +466,61 @@ public class ResourceInputBuilderTests
             AttributesProviderType = typeof(AttributesProvider)
         };
         var httpContext = new DefaultHttpContext();
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestAttributes, result.Attributes);
     }
-    
+
     [Fact]
     public async Task Attributes_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(configureService: services => services
-            .AddSingleton<AttributesProvider>()
-            .AddSingleton<AttributesProviderDi>());
+        var builder = GetBuilder();
         var attribute = new PermitAttribute(TestAction, TestType)
         {
             AttributesProviderType = typeof(AttributesProviderDi)
         };
         var httpContext = new DefaultHttpContext();
-        
+
+        var configureService = new Action<ServiceCollection>(services => services
+            .AddSingleton<AttributesProvider>()
+            .AddSingleton<AttributesProviderDi>());
+        httpContext.RequestServices = BuildServiceProvider(configureService);
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestAttributes, result.Attributes);
     }
-    
+
     [Fact]
     public async Task Attributes_Provider_Global()
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitOptions 
+            options: new PermitOptions
             {
                 GlobalAttributesProviderType = typeof(AttributesProviderDi)
-            },
-            configureService: services => services
-                .AddSingleton<AttributesProvider>()
-                .AddSingleton<AttributesProviderDi>());
+            });
         var attribute = new PermitAttribute(TestAction, TestType);
         var httpContext = new DefaultHttpContext();
-        
+
+        var configureService = new Action<ServiceCollection>(services => services
+            .AddSingleton<AttributesProvider>()
+            .AddSingleton<AttributesProviderDi>());
+        httpContext.RequestServices = BuildServiceProvider(configureService);
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
@@ -518,7 +534,7 @@ public class ResourceInputBuilderTests
             return Task.FromResult(TestAttributes);
         }
     }
-    
+
     private class AttributesProviderDi : IPermitValuesProvider
     {
         private readonly AttributesProvider _provider;
@@ -535,7 +551,7 @@ public class ResourceInputBuilderTests
     }
 
     #endregion
-    
+
     #region Context
 
     [Fact]
@@ -548,56 +564,61 @@ public class ResourceInputBuilderTests
             ContextProviderType = typeof(ContextProvider)
         };
         var httpContext = new DefaultHttpContext();
-        
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestContext, result.Context);
     }
-    
+
     [Fact]
     public async Task Context_Provider_DependencyInjection()
     {
         // Arrange
-        var builder = GetBuilder(configureService: services => services
-            .AddSingleton<ContextProvider>()
-            .AddSingleton<ContextProviderDi>());
+        var builder = GetBuilder();
         var attribute = new PermitAttribute(TestAction, TestType)
         {
             ContextProviderType = typeof(ContextProviderDi)
         };
         var httpContext = new DefaultHttpContext();
-        
+
+        var configureService = new Action<ServiceCollection>(services => services
+            .AddSingleton<ContextProvider>()
+            .AddSingleton<ContextProviderDi>());
+        httpContext.RequestServices = BuildServiceProvider(configureService);
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
         Assert.Equal(TestContext, result.Context);
     }
-    
+
     [Fact]
     public async Task Context_Provider_Global()
     {
         // Arrange
         var builder = GetBuilder(
-            options: new PermitOptions 
+            options: new PermitOptions
             {
                 GlobalContextProviderType = typeof(ContextProviderDi)
-            },
-            configureService: services => services
-                .AddSingleton<ContextProvider>()
-                .AddSingleton<ContextProviderDi>());
+            });
         var attribute = new PermitAttribute(TestAction, TestType);
         var httpContext = new DefaultHttpContext();
-        
+
+        var configureService = new Action<ServiceCollection>(services => services
+            .AddSingleton<ContextProvider>()
+            .AddSingleton<ContextProviderDi>());
+        httpContext.RequestServices = BuildServiceProvider(configureService);
+
         // Act
         var result = await builder.BuildAsync(attribute, httpContext);
-        
+
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TestType, result.Type);
@@ -611,7 +632,7 @@ public class ResourceInputBuilderTests
             return Task.FromResult(TestContext);
         }
     }
-    
+
     private class ContextProviderDi : IPermitValuesProvider
     {
         private readonly ContextProvider _provider;
@@ -628,17 +649,21 @@ public class ResourceInputBuilderTests
     }
 
     #endregion
-    
+
     #region Helpers
 
     private static ResourceInputBuilder GetBuilder(
-        PermitOptions? options = null,
-        Action<ServiceCollection>? configureService = null)
+        PermitOptions? options = null)
     {
         options ??= new PermitOptions();
+        return new ResourceInputBuilder(options);
+    }
+
+    private static IServiceProvider BuildServiceProvider(Action<ServiceCollection>? configureService = null)
+    {
         var services = new ServiceCollection();
         configureService?.Invoke(services);
-        return new ResourceInputBuilder(options, services.BuildServiceProvider());
+        return services.BuildServiceProvider();
     }
 
     #endregion

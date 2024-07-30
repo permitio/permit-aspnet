@@ -9,16 +9,16 @@
         <WarningsAsErrors>$(WarningsAsErrors);1591</WarningsAsErrors>
         <Authors>Matteo Bortolazzo</Authors>
         <RepositoryUrl>https://github.com/permitio/permit-aspnet</RepositoryUrl>
-	    <Version>1.0.3</Version>
-	    <PackageReleaseNotes>Resource Key Instance-ResourceFromBody-Fix issue of request body not accessible post reading data from httpContext.Request.Body using a StreamReader</PackageReleaseNotes>
-	    <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Version>1.1.0</Version>
+        <PackageReleaseNotes>Add Callback before any request to PDP and fix issue while resolving the service for custom providers</PackageReleaseNotes>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
     </PropertyGroup>
-    
+
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
-    
+
     <ItemGroup>
         <None Include="..\README.md" Pack="true" PackagePath="\"/>
         <None Include="..\LICENSE" Pack="true" PackagePath="\"/>
