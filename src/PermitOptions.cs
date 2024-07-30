@@ -57,5 +57,5 @@ public class PermitOptions
     /// <summary>
     /// Function called before any request is sent to the PDP
     /// </summary>
-    public Action<HttpRequestMessage>? BeforeSendCallback { get; set; }
+    public Func<HttpRequestMessage, Task>? BeforeSendCallbackAsync { get; set; }
 }

@@ -2,9 +2,9 @@ namespace PermitSDK.AspNet;
 
 internal class InternalDelegatingHandler : DelegatingHandler
 {
-    private readonly Action<HttpRequestMessage> _configureRequest;
+    private readonly Func<HttpRequestMessage, Task> _configureRequest;
 
-    public InternalDelegatingHandler(Action<HttpRequestMessage> configureRequest)
+    public InternalDelegatingHandler(Func<HttpRequestMessage, Task> configureRequest)
     {
         _configureRequest = configureRequest;
     }
@@ -13,7 +13,7 @@ internal class InternalDelegatingHandler : DelegatingHandler
         HttpRequestMessage request, 
         CancellationToken cancellationToken)
     {
-        _configureRequest(request);
+        await _configureRequest(request);
         var response = await base.SendAsync(request, cancellationToken);
         return response;
     }

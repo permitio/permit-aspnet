@@ -56,9 +56,9 @@ public static class PermitExtensions
             client.DefaultRequestHeaders.Add("x-permit-sdk-language", "permitio-aspnet-sdk");
         });
         
-        if (options.BeforeSendCallback != null)
+        if (options.BeforeSendCallbackAsync != null)
         {
-            httpClientBuilder.AddHttpMessageHandler(_ => new InternalDelegatingHandler(options.BeforeSendCallback));
+            httpClientBuilder.AddHttpMessageHandler(_ => new InternalDelegatingHandler(options.BeforeSendCallbackAsync));
         }
 
         return services;
@@ -78,7 +78,6 @@ public static class PermitExtensions
         {
             throw new InvalidOperationException("Permit middleware not registered.");
         }
-
 
         Func<IResourceInputBuilder> resourceInputBuilderFactory =
             () => new ResourceInputBuilder(options, applicationBuilder.ApplicationServices);
