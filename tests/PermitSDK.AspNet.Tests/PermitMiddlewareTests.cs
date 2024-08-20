@@ -19,6 +19,8 @@ public class PermitMiddlewareTests
     private const string DefaultUserKey = "defaultUserKey";
     private const string ProviderUserKey = "testUserKey";
     private readonly Mock<ILogger<PermitMiddleware>> _loggerMock = new();
+    private static PermitAttribute SuccessTestAttribute => new(TestAction, TestResourceType);
+    private static PermitAttribute FailTestAttribute => new("OtherAction", "OtherResource");
 
     [Fact]
     public async Task NoActionDescriptor_Ok()
@@ -87,77 +89,99 @@ public class PermitMiddlewareTests
     [InlineData(UserIdClaimTypes.ObjectIdentifier)]
     public async Task ActionOnResource_UserKeyFromClaims_Ok(string userIdClaimType)
     {
-        // Arrange
-        var pdpService = GetPdpServiceFromAllowed(DefaultUserKey, TestAction, TestResourceType, null, true);
-
-        var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
-        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<PermitAttribute>(a =>
-                a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
-            .ReturnsAsync(new Resource(null, null, null, null, TestResourceType));
-
-        var middleware = new PermitMiddleware(Success,
-            pdpService,
-            resourceInputBuilderFactoryMock.Object,
-            new PermitOptions(),
-            _loggerMock.Object);
-
-        var attribute = new PermitAttribute(TestAction, TestResourceType);
-        var httpContext = GetContext(userIdClaimType: userIdClaimType, controllerAttributes: [attribute]);
-
-        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(attribute, httpContext))
-            .ReturnsAsync(new Resource(null, null, null, null, attribute.ResourceType));
-
-        // Act
-        await middleware.InvokeAsync(httpContext, null!);
-
-        // Assert
-        Assert.Equal(200, httpContext.Response.StatusCode);
+        await RunMiddlewareAsync(controllerAttributes: [SuccessTestAttribute], userIdClaimType: userIdClaimType);
     }
 
     [Fact]
     public async Task ActionOnResource_UserKeyFromProvider_Ok()
     {
-        var attribute = new PermitAttribute(TestAction, TestResourceType);
         var options = new PermitOptions
         {
             GlobalUserKeyProviderType = typeof(TestUserKeyProvider)
         };
-        await RunMiddlewareAsync(true, controllerAttributes: [attribute], options: options, userKey: ProviderUserKey);
+        await RunMiddlewareAsync(controllerAttributes: [SuccessTestAttribute], options: options,
+            userKey: ProviderUserKey);
     }
 
-    [Fact]
-    public async Task ActionOnResource_AttributeOnController_403()
+    [Theory]
+    [MemberData(nameof(MiddlewareTestData))]
+    public async Task ActionOnResource_WithAttributes(string runName, bool isAllowed,
+        PermitAttribute[]? controllerAttributes, PermitAttribute[]? actionAttributes)
     {
-        var attribute = new PermitAttribute(TestAction, TestResourceType);
-        await RunMiddlewareAsync(false, controllerAttributes: [attribute]);
+        await RunMiddlewareAsync(isAllowed, controllerAttributes, actionAttributes);
     }
 
-    [Fact]
-    public async Task ActionOnResource_AttributeOnAction_403()
-    {
-        var attribute = new PermitAttribute(TestAction, TestResourceType);
-        await RunMiddlewareAsync(false, actionAttributes: [attribute]);
-    }
+    public static IEnumerable<object?[]> MiddlewareTestData =>
+        new List<object?[]>
+        {
+            // name, expectedResponse, controllerAttributes, actionAttributes
+            new object?[]
+            {
+                "Single controller wrong attribute: false",
+                false, new[] { FailTestAttribute }, null
+            },
+            new object?[]
+            {
+                "Single action wrong attribute: false",
+                false, null, new[] { FailTestAttribute }
+            },
+            new object?[]
+            {
+                "Single controller attribute: true",
+                true, new[] { SuccessTestAttribute }, null
+            },
+            new object?[]
+            {
+                "Single action attribute: true",
+                true, null, new[] { SuccessTestAttribute }
+            },
+            new object?[]
+            {
+                "Multiple controller attributes: true",
+                true, new[] { SuccessTestAttribute, SuccessTestAttribute }, null
+            },
+            new object?[]
+            {
+                "Multiple controller attributes: false",
+                false, new[] { SuccessTestAttribute, FailTestAttribute }, null
+            },
+            new object?[]
+            {
+                "Multiple action attributes: true",
+                true, null, new[] { SuccessTestAttribute, SuccessTestAttribute }
+            },
+            new object?[]
+            {
+                "Multiple action attributes: false",
+                false, null, new[] { SuccessTestAttribute, FailTestAttribute }
+            },
+            new object?[]
+            {
+                "Multiple attributes: true",
+                true, new[] { SuccessTestAttribute }, new[] { SuccessTestAttribute }
+            },
+            new object?[]
+            {
+                "Multiple attributes: false",
+                false, new[] { SuccessTestAttribute }, new[] { FailTestAttribute }
+            },
+            new object?[]
+            {
+                "Multiple attributes 2: false",
+                false, new[] { FailTestAttribute }, new[] { SuccessTestAttribute }
+            }
+        };
 
-    [Fact]
-    public async Task ActionOnResource_AttributeOnController_Ok()
-    {
-        var attribute = new PermitAttribute(TestAction, TestResourceType);
-        await RunMiddlewareAsync(true, controllerAttributes: [attribute]);
-    }
-
-    [Fact]
-    public async Task ActionOnResource_AttributeOnAction_Ok()
-    {
-        var attribute = new PermitAttribute(TestAction, TestResourceType);
-        await RunMiddlewareAsync(true, actionAttributes: [attribute]);
-    }
-
-    private async Task RunMiddlewareAsync(bool isAllowed, PermitAttribute[]? controllerAttributes = null,
-        PermitAttribute[]? actionAttributes = null, PermitOptions? options = null, string userKey = DefaultUserKey)
+    private async Task RunMiddlewareAsync(
+        bool expected = true,
+        PermitAttribute[]? controllerAttributes = null,
+        PermitAttribute[]? actionAttributes = null,
+        PermitOptions? options = null,
+        string userIdClaimType = UserIdClaimTypes.NameIdentifier,
+        string userKey = DefaultUserKey)
     {
         // Arrange
-        var pdpService = GetPdpServiceFromAllowed(userKey, TestAction, TestResourceType, null, isAllowed);
+        var pdpService = GetPdpServiceFromAllowed(userKey, TestAction, TestResourceType, null);
         var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
         resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<PermitAttribute>(a =>
                 a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
@@ -169,13 +193,14 @@ public class PermitMiddlewareTests
             options ?? new PermitOptions(),
             _loggerMock.Object);
 
-        var httpContext = GetContext(controllerAttributes: controllerAttributes, actionAttributes: actionAttributes);
+        var httpContext = GetContext(userIdClaimType: userIdClaimType, controllerAttributes: controllerAttributes,
+            actionAttributes: actionAttributes);
 
         // Act
         await middleware.InvokeAsync(httpContext, null!);
 
         // Assert
-        var expectedResponseCode = isAllowed ? 200 : 403;
+        var expectedResponseCode = expected ? 200 : 403;
         Assert.Equal(expectedResponseCode, httpContext.Response.StatusCode);
     }
 
@@ -249,8 +274,7 @@ public class PermitMiddlewareTests
         }
     }
 
-    private static PdpService GetPdpServiceFromAllowed(string userKey, string action, string type, string? resourceKey,
-        bool allowed)
+    private static PdpService GetPdpServiceFromAllowed(string userKey, string action, string type, string? resourceKey)
     {
         var serializationOptions = new JsonSerializerOptions
         {
@@ -270,7 +294,7 @@ public class PermitMiddlewareTests
                         allowedRequest.Action == action &&
                         allowedRequest.Resource.Type == type &&
                         allowedRequest.Resource.Key == resourceKey &&
-                        allowedRequest.User.Key == userKey && allowed;
+                        allowedRequest.User.Key == userKey;
 
                     var response = new HttpResponseMessage();
                     var content = JsonSerializer.Serialize(new AuthorizationResult(responseAllowed, null, null, null),
