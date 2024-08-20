@@ -174,9 +174,9 @@ public class PermitMiddlewareTests
         Assert.Equal(200, httpContext.Response.StatusCode);
     }
 
-    private static HttpContext GetContextWithControllerAttributes(PermitAttribute attribute)
+    private static HttpContext GetContextWithControllerAttributes(PermitAttribute metadata)
     {
-        return GetContext(controllerAttributes: new[] { attribute });
+        return GetContext(controllerAttributes: new[] { metadata });
     }
 
     private static HttpContext GetContext(

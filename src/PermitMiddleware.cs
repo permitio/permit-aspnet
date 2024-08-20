@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Logging;
+using PermitSDK.AspNet.Abstractions;
 using PermitSDK.AspNet.Services;
 
 namespace PermitSDK.AspNet;
@@ -69,39 +70,75 @@ public sealed class PermitMiddleware
             return;
         }
 
-        var permitMedata = GetPermitEndpointMetadata(endpoint);
-        foreach (var data in permitMedata)
+        var permitMetadataList = GetPermitMetadataList(endpoint);
+        if (permitMetadataList.Count > 0)
         {
-            var controllerPermitted = await IsAuthorizedAsync(httpContext, data, userKey);
-            if (controllerPermitted) continue;
-            httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-            return;
+
+            var isEndpointAuthorized = await IsAuthorizedListAsync(httpContext, userKey, permitMetadataList);
+            if (!isEndpointAuthorized)
+            {
+                httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                return;
+            }
         }
 
         await _next(httpContext);
     }
 
-    private static IEnumerable<IPermitData> GetPermitEndpointMetadata(Endpoint endpoint)
+    private static IReadOnlyList<IPermitMetadata> GetPermitMetadataList(Endpoint endpoint)
     {
-        var permitData = endpoint.Metadata.GetOrderedMetadata<IPermitData>();
-        if (permitData.Any())
-        {
-            return permitData;
-        }
-
+        // Minimal API
         if (endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()
             is not { } actionDescriptor)
         {
-            return Array.Empty<IPermitData>();
+            return endpoint.Metadata.GetOrderedMetadata<IPermitMetadata>(); 
         }
 
+        // Controller
         var controllerAttributes = actionDescriptor.ControllerTypeInfo
-            .GetCustomAttributes<PermitAttribute>(inherit: true);
+            .GetCustomAttributes<PermitMetadataAttribute>(inherit: true);
         var actionAttributes = actionDescriptor.MethodInfo
-            .GetCustomAttributes<PermitAttribute>(inherit: true);
+            .GetCustomAttributes<PermitMetadataAttribute>(inherit: true);
         return controllerAttributes.Concat(actionAttributes).ToArray();
     }
 
+    private async Task<bool> IsAuthorizedListAsync(HttpContext httpContext, User userKey, IEnumerable<IPermitMetadata> permitDataList)
+    {
+        // Run as AND
+        foreach (var metadata in permitDataList)
+        {
+            switch (metadata)
+            {
+                case IPermitData data:
+                {
+                    var isAuthorised = await IsAuthorizedAsync(httpContext, data, userKey);
+                    if (!isAuthorised)
+                    {
+                        return false;
+                    }
+
+                    break;
+                }
+                // Run as OR
+                case IPermitAnyData anyData:
+                {
+                    foreach (var policy in anyData.Policies)
+                    {
+                        var isAuthorised = await IsAuthorizedAsync(httpContext, policy, userKey);
+                        if (isAuthorised)
+                        {
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        return true;
+    }
+    
     private async Task<User?> GetUserKeyAsync(HttpContext httpContext)
     {
         if (_options.GlobalUserKeyProviderType != null)

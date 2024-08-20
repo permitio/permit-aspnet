@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using PermitSDK.AspNet.Abstractions;
 using PermitSDK.AspNet.Services;
 
 namespace PermitSDK.AspNet;

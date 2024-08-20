@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Http;
+using PermitSDK.AspNet.Abstractions;
 using PermitSDK.AspNet.Services;
 
 namespace PermitSDK.AspNet;
