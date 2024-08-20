@@ -15,6 +15,7 @@ internal class ResourceInputBuilder(PermitOptions options) : IResourceInputBuild
         : null;
     private Dictionary<string, object>? _attributes;
     private Dictionary<string, object>? _context;
+    private static readonly char[] JsonSeparator = ['.'];
 
     public async Task<Resource?> BuildAsync(IPermitData data, HttpContext httpContext)
     {
@@ -226,7 +227,7 @@ internal class ResourceInputBuilder(PermitOptions options) : IResourceInputBuild
                 return default;
             }
 
-            var segments = path.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+            var segments = path.Split(JsonSeparator, StringSplitOptions.RemoveEmptyEntries);
             foreach (var t in segments)
             {
                 jsonElement = jsonElement.TryGetProperty(t, out var value) ? value : default;

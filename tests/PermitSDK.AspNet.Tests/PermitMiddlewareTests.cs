@@ -80,39 +80,12 @@ public class PermitMiddlewareTests
         Assert.Equal(200, httpContext.Response.StatusCode);
     }
 
-    [Fact]
-    public async Task ActionOnResource_403()
-    {
-        // Arrange
-        var pdpService = GetPdpServiceFromAllowed(DefaultUserKey, TestAction, TestResourceType, null, false);
-
-        var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
-        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<PermitAttribute>(a =>
-                a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
-            .ReturnsAsync(new Resource(null, null, null, null, TestResourceType));
-
-        var middleware = new PermitMiddleware(Success,
-            pdpService,
-            resourceInputBuilderFactoryMock.Object,
-            new PermitOptions(),
-            _loggerMock.Object);
-
-        var attribute = new PermitAttribute(TestAction, TestResourceType);
-        var httpContext = GetContextWithControllerAttributes(attribute);
-
-        // Act
-        await middleware.InvokeAsync(httpContext, null!);
-
-        // Assert
-        Assert.Equal(403, httpContext.Response.StatusCode);
-    }
-
     [Theory]
     [InlineData(UserIdClaimTypes.Subject)]
     [InlineData(UserIdClaimTypes.NameIdentifier)]
     [InlineData(UserIdClaimTypes.FullyQualifiedId)]
     [InlineData(UserIdClaimTypes.ObjectIdentifier)]
-    public async Task ActionOnResource_Ok_UserKeyFromClaims(string userIdClaimType)
+    public async Task ActionOnResource_UserKeyFromClaims_Ok(string userIdClaimType)
     {
         // Arrange
         var pdpService = GetPdpServiceFromAllowed(DefaultUserKey, TestAction, TestResourceType, null, true);
@@ -129,7 +102,7 @@ public class PermitMiddlewareTests
             _loggerMock.Object);
 
         var attribute = new PermitAttribute(TestAction, TestResourceType);
-        var httpContext = GetContext(userIdClaimType: userIdClaimType, controllerAttributes: new[] { attribute });
+        var httpContext = GetContext(userIdClaimType: userIdClaimType, controllerAttributes: [attribute]);
 
         resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(attribute, httpContext))
             .ReturnsAsync(new Resource(null, null, null, null, attribute.ResourceType));
@@ -142,11 +115,49 @@ public class PermitMiddlewareTests
     }
 
     [Fact]
-    public async Task ActionOnResource_Ok_UserKeyProvider()
+    public async Task ActionOnResource_UserKeyFromProvider_Ok()
+    {
+        var attribute = new PermitAttribute(TestAction, TestResourceType);
+        var options = new PermitOptions
+        {
+            GlobalUserKeyProviderType = typeof(TestUserKeyProvider)
+        };
+        await RunMiddlewareAsync(true, controllerAttributes: [attribute], options: options, userKey: ProviderUserKey);
+    }
+
+    [Fact]
+    public async Task ActionOnResource_AttributeOnController_403()
+    {
+        var attribute = new PermitAttribute(TestAction, TestResourceType);
+        await RunMiddlewareAsync(false, controllerAttributes: [attribute]);
+    }
+
+    [Fact]
+    public async Task ActionOnResource_AttributeOnAction_403()
+    {
+        var attribute = new PermitAttribute(TestAction, TestResourceType);
+        await RunMiddlewareAsync(false, actionAttributes: [attribute]);
+    }
+
+    [Fact]
+    public async Task ActionOnResource_AttributeOnController_Ok()
+    {
+        var attribute = new PermitAttribute(TestAction, TestResourceType);
+        await RunMiddlewareAsync(true, controllerAttributes: [attribute]);
+    }
+
+    [Fact]
+    public async Task ActionOnResource_AttributeOnAction_Ok()
+    {
+        var attribute = new PermitAttribute(TestAction, TestResourceType);
+        await RunMiddlewareAsync(true, actionAttributes: [attribute]);
+    }
+
+    private async Task RunMiddlewareAsync(bool isAllowed, PermitAttribute[]? controllerAttributes = null,
+        PermitAttribute[]? actionAttributes = null, PermitOptions? options = null, string userKey = DefaultUserKey)
     {
         // Arrange
-        var pdpService = GetPdpServiceFromAllowed(ProviderUserKey, TestAction, TestResourceType, null, true);
-
+        var pdpService = GetPdpServiceFromAllowed(userKey, TestAction, TestResourceType, null, isAllowed);
         var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
         resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<PermitAttribute>(a =>
                 a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
@@ -155,31 +166,20 @@ public class PermitMiddlewareTests
         var middleware = new PermitMiddleware(Success,
             pdpService,
             resourceInputBuilderFactoryMock.Object,
-            new PermitOptions
-            {
-                GlobalUserKeyProviderType = typeof(TestUserKeyProvider)
-            },
+            options ?? new PermitOptions(),
             _loggerMock.Object);
 
-        var attribute = new PermitAttribute(TestAction, TestResourceType);
-        var httpContext = GetContextWithControllerAttributes(attribute);
-
-        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(attribute, httpContext))
-            .ReturnsAsync(new Resource(null, null, null, null, attribute.ResourceType));
+        var httpContext = GetContext(controllerAttributes: controllerAttributes, actionAttributes: actionAttributes);
 
         // Act
         await middleware.InvokeAsync(httpContext, null!);
 
         // Assert
-        Assert.Equal(200, httpContext.Response.StatusCode);
+        var expectedResponseCode = isAllowed ? 200 : 403;
+        Assert.Equal(expectedResponseCode, httpContext.Response.StatusCode);
     }
 
-    private static HttpContext GetContextWithControllerAttributes(PermitAttribute metadata)
-    {
-        return GetContext(controllerAttributes: new[] { metadata });
-    }
-
-    private static HttpContext GetContext(
+    private static DefaultHttpContext GetContext(
         bool withUser = true,
         string userIdClaimType = UserIdClaimTypes.NameIdentifier,
         PermitAttribute[]? controllerAttributes = null,
@@ -189,8 +189,8 @@ public class PermitMiddlewareTests
         {
             ControllerName = "MockedController",
             ActionName = "MockedAction",
-            ControllerTypeInfo = new FakeTypeInfo(controllerAttributes ?? Array.Empty<PermitAttribute>()),
-            MethodInfo = new FakeMethodInfo(actionAttributes ?? Array.Empty<PermitAttribute>())
+            ControllerTypeInfo = new FakeTypeInfo(controllerAttributes ?? []),
+            MethodInfo = new FakeMethodInfo(actionAttributes ?? [])
         };
 
         var metadata = new EndpointMetadataCollection(actionDescriptor);
