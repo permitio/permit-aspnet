@@ -71,7 +71,7 @@ public static class PermitEndpointConventionBuilderExtensions
             throw new ArgumentNullException(nameof(builder));
         }
 
-        var data = new PermitAnyMetadata(dataList);
+        var data = new PermitAnyAttribute(dataList);
         builder.Add(endpointBuilder => { endpointBuilder.Metadata.Add(data); });
         return builder;
     }

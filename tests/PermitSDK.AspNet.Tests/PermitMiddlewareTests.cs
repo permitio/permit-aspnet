@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
+using PermitSDK.AspNet.Abstractions;
 using PermitSDK.AspNet.Services;
 using PermitSDK.AspNet.Tests.Mock;
 
@@ -16,11 +17,15 @@ public class PermitMiddlewareTests
 {
     private const string TestResourceType = "article";
     private const string TestAction = "read";
+    private const string FailTestAction = "fail";
+    private const string FailTestResourceType = "fail";
     private const string DefaultUserKey = "defaultUserKey";
     private const string ProviderUserKey = "testUserKey";
     private readonly Mock<ILogger<PermitMiddleware>> _loggerMock = new();
     private static PermitAttribute SuccessTestAttribute => new(TestAction, TestResourceType);
-    private static PermitAttribute FailTestAttribute => new("OtherAction", "OtherResource");
+    private static PermitData SuccessTestData => new(TestAction, TestResourceType);
+    private static PermitAttribute FailTestAttribute => new(FailTestAction, FailTestResourceType);
+    private static PermitData FailTestData => new(FailTestAction, FailTestResourceType);
 
     [Fact]
     public async Task NoActionDescriptor_Ok()
@@ -106,7 +111,7 @@ public class PermitMiddlewareTests
     [Theory]
     [MemberData(nameof(MiddlewareTestData))]
     public async Task ActionOnResource_WithAttributes(string runName, bool isAllowed,
-        PermitAttribute[]? controllerAttributes, PermitAttribute[]? actionAttributes)
+        PermitMetadataAttribute[]? controllerAttributes, PermitMetadataAttribute[]? actionAttributes)
     {
         await RunMiddlewareAsync(isAllowed, controllerAttributes, actionAttributes);
     }
@@ -169,13 +174,43 @@ public class PermitMiddlewareTests
             {
                 "Multiple attributes 2: false",
                 false, new[] { FailTestAttribute }, new[] { SuccessTestAttribute }
+            },
+            new object?[]
+            {
+                "Any controller attribute: true",
+                true, new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }, null
+            },
+            new object?[]
+            {
+                "Any controller attribute: false",
+                false, new[] { new PermitAnyAttribute(FailTestData, FailTestData) }, null
+            },
+            new object?[]
+            {
+                "Any action attribute: true",
+                true, null, new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }
+            },
+            new object?[]
+            {
+                "Any action attribute: false",
+                false, null, new[] { new PermitAnyAttribute(FailTestData, FailTestData) }
+            },
+            new object?[]
+            {
+                "Any mixed attribute: true",
+                true,  new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }, new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }
+            },
+            new object?[]
+            {
+                "Any mixed attribute: false",
+                false,  new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }, new[] { new PermitAnyAttribute(FailTestData, FailTestData) }
             }
         };
 
     private async Task RunMiddlewareAsync(
         bool expected = true,
-        PermitAttribute[]? controllerAttributes = null,
-        PermitAttribute[]? actionAttributes = null,
+        PermitMetadataAttribute[]? controllerAttributes = null,
+        PermitMetadataAttribute[]? actionAttributes = null,
         PermitOptions? options = null,
         string userIdClaimType = UserIdClaimTypes.NameIdentifier,
         string userKey = DefaultUserKey)
@@ -183,9 +218,13 @@ public class PermitMiddlewareTests
         // Arrange
         var pdpService = GetPdpServiceFromAllowed(userKey, TestAction, TestResourceType, null);
         var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
-        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<PermitAttribute>(a =>
+        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<IPermitData>(a =>
                 a.ResourceType == TestResourceType && a.Action == TestAction), It.IsAny<HttpContext>()))
             .ReturnsAsync(new Resource(null, null, null, null, TestResourceType));
+        
+        resourceInputBuilderFactoryMock.Setup(m => m.Invoke().BuildAsync(It.Is<IPermitData>(a =>
+                a.ResourceType == FailTestResourceType && a.Action == FailTestAction), It.IsAny<HttpContext>()))
+            .ReturnsAsync(new Resource(null, null, null, null, FailTestResourceType));
 
         var middleware = new PermitMiddleware(Success,
             pdpService,
@@ -207,8 +246,8 @@ public class PermitMiddlewareTests
     private static DefaultHttpContext GetContext(
         bool withUser = true,
         string userIdClaimType = UserIdClaimTypes.NameIdentifier,
-        PermitAttribute[]? controllerAttributes = null,
-        PermitAttribute[]? actionAttributes = null)
+        PermitMetadataAttribute[]? controllerAttributes = null,
+        PermitMetadataAttribute[]? actionAttributes = null)
     {
         var actionDescriptor = new ControllerActionDescriptor
         {

@@ -107,38 +107,42 @@ public sealed class PermitMiddleware
         // Run as AND
         foreach (var metadata in permitDataList)
         {
-            switch (metadata)
+            if (metadata is IPermitData data)
             {
-                case IPermitData data:
+                var isAuthorised = await IsAuthorizedAsync(httpContext, data, userKey);
+                if (!isAuthorised)
                 {
-                    var isAuthorised = await IsAuthorizedAsync(httpContext, data, userKey);
-                    if (!isAuthorised)
-                    {
-                        return false;
-                    }
-
-                    break;
+                    return false;
                 }
-                // Run as OR
-                case IPermitAnyData anyData:
+            }
+            // Run as OR
+            else if (metadata is IPermitAnyData anyData)
+            {
+                var isAuthorised = await IsAnyAuthorisedAsync(httpContext, userKey, anyData);
+                if (!isAuthorised)
                 {
-                    foreach (var policy in anyData.Policies)
-                    {
-                        var isAuthorised = await IsAuthorizedAsync(httpContext, policy, userKey);
-                        if (isAuthorised)
-                        {
-                            break;
-                        }
-                    }
-
-                    break;
+                    return false;
                 }
             }
         }
 
         return true;
     }
-    
+
+    private async Task<bool> IsAnyAuthorisedAsync(HttpContext httpContext, User userKey, IPermitAnyData anyData)
+    {
+        foreach (var policy in anyData.Policies)
+        {
+            var isAuthorised = await IsAuthorizedAsync(httpContext, policy, userKey);
+            if (isAuthorised)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private async Task<User?> GetUserKeyAsync(HttpContext httpContext)
     {
         if (_options.GlobalUserKeyProviderType != null)
