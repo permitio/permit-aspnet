@@ -88,7 +88,9 @@ app.MapGetArticles()
 
 ## Allow multiple actions
 
-It's also possible to allow multiple actions by separeting them with a comma.
+It's also possible to allow multiple actions by separating them with a comma.
+
+> Multiple attributes will act as an AND condition. Comma  separated actions will act as an OR condition.
 
 ```csharp
 // Controller
