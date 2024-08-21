@@ -116,6 +116,18 @@ public class PermitMiddlewareTests
         await RunMiddlewareAsync(isAllowed, controllerAttributes, actionAttributes);
     }
 
+    [Fact]
+    public async Task ActionOnResource_WithMinimalApi()
+    {
+        await RunMiddlewareAsync(true, endpointMetadata: [SuccessTestData]);
+    }
+    
+    [Fact]
+    public async Task ActionOnResource_WithMinimalApi_Fail()
+    {
+        await RunMiddlewareAsync(false, endpointMetadata: [FailTestData]);
+    }
+
     public static IEnumerable<object?[]> MiddlewareTestData =>
         new List<object?[]>
         {
@@ -211,6 +223,7 @@ public class PermitMiddlewareTests
         bool expected = true,
         PermitMetadataAttribute[]? controllerAttributes = null,
         PermitMetadataAttribute[]? actionAttributes = null,
+        IPermitMetadata[]? endpointMetadata = null,
         PermitOptions? options = null,
         string userIdClaimType = UserIdClaimTypes.NameIdentifier,
         string userKey = DefaultUserKey)
@@ -232,8 +245,12 @@ public class PermitMiddlewareTests
             options ?? new PermitOptions(),
             _loggerMock.Object);
 
-        var httpContext = GetContext(userIdClaimType: userIdClaimType, controllerAttributes: controllerAttributes,
-            actionAttributes: actionAttributes);
+        var httpContext = GetContext(
+            withUser: true,
+            userIdClaimType,
+            controllerAttributes,
+            actionAttributes,
+            endpointMetadata);
 
         // Act
         await middleware.InvokeAsync(httpContext, null!);
@@ -247,20 +264,29 @@ public class PermitMiddlewareTests
         bool withUser = true,
         string userIdClaimType = UserIdClaimTypes.NameIdentifier,
         PermitMetadataAttribute[]? controllerAttributes = null,
-        PermitMetadataAttribute[]? actionAttributes = null)
+        PermitMetadataAttribute[]? actionAttributes = null,
+        IPermitMetadata[]? endpointMetadata = null)
     {
-        var actionDescriptor = new ControllerActionDescriptor
+        EndpointMetadataCollection? endpointMetadataCollection = null;
+        if (controllerAttributes?.Length > 0 || actionAttributes?.Length > 0)
         {
-            ControllerName = "MockedController",
-            ActionName = "MockedAction",
-            ControllerTypeInfo = new FakeTypeInfo(controllerAttributes ?? []),
-            MethodInfo = new FakeMethodInfo(actionAttributes ?? [])
-        };
+            var actionDescriptor = new ControllerActionDescriptor
+            {
+                ControllerName = "MockedController",
+                ActionName = "MockedAction",
+                ControllerTypeInfo = new FakeTypeInfo(controllerAttributes ?? []),
+                MethodInfo = new FakeMethodInfo(actionAttributes ?? [])
+            };
+            endpointMetadataCollection = new EndpointMetadataCollection(actionDescriptor);
+        }
+        else if (endpointMetadata?.Length > 0)
+        {
+            endpointMetadataCollection = new EndpointMetadataCollection(endpointMetadata.Cast<object>());
+        }
 
-        var metadata = new EndpointMetadataCollection(actionDescriptor);
         var endpoint = new Endpoint(
             _ => Task.CompletedTask, // Dummy request delegate
-            metadata,
+            endpointMetadataCollection,
             "Test endpoint"
         );
 
