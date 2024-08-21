@@ -86,6 +86,25 @@ app.MapGetArticles()
     .RequirePermit("read", "article");
 ```
 
+## Allow multiple actions
+
+It's also possible to allow multiple actions by separeting them with a comma.
+
+```csharp
+// Controller
+[HttpGet("articles/{id}")]
+[Permit("read,write", "article")]
+public Article GetArticle([FromRoute] string id)
+{
+    ...
+}
+
+// Minimal API
+app.MapGetArticles()
+    .WithName("GetArticles")
+    .RequirePermit("read,write", "article");
+```
+
 ## Resource instances
 
 It's possible to specify a resource instance key in the `Permit` attribute:

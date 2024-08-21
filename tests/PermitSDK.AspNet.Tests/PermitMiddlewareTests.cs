@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
-using PermitSDK.AspNet.Abstractions;
 using PermitSDK.AspNet.Services;
 using PermitSDK.AspNet.Tests.Mock;
 
@@ -17,6 +16,8 @@ public class PermitMiddlewareTests
 {
     private const string TestResourceType = "article";
     private const string TestAction = "read";
+    private const string TestMultiAction = $"{FailTestAction},{TestAction}";
+    private const string FailTestMultiAction = $"{FailTestAction},{FailTestAction}";
     private const string FailTestAction = "fail";
     private const string FailTestResourceType = "fail";
     private const string DefaultUserKey = "defaultUserKey";
@@ -26,11 +27,13 @@ public class PermitMiddlewareTests
     private static PermitData SuccessTestData => new(TestAction, TestResourceType);
     private static PermitAttribute FailTestAttribute => new(FailTestAction, FailTestResourceType);
     private static PermitData FailTestData => new(FailTestAction, FailTestResourceType);
+    private static PermitAttribute SuccessTestMultiAttribute => new(TestMultiAction, TestResourceType);
+    private static PermitAttribute FailTestMultiAttribute => new(FailTestMultiAction, TestResourceType);
 
     [Fact]
     public async Task NoActionDescriptor_Ok()
     {
-        // Arrange
+        // q
         var httpContext = new DefaultHttpContext();
         var pdpService = GetPdpService(_ => { });
         var resourceInputBuilderFactoryMock = new Mock<Func<IResourceInputBuilder>>();
@@ -111,7 +114,7 @@ public class PermitMiddlewareTests
     [Theory]
     [MemberData(nameof(MiddlewareTestData))]
     public async Task ActionOnResource_WithAttributes(string runName, bool isAllowed,
-        PermitMetadataAttribute[]? controllerAttributes, PermitMetadataAttribute[]? actionAttributes)
+        PermitAttribute[]? controllerAttributes, PermitAttribute[]? actionAttributes)
     {
         await RunMiddlewareAsync(isAllowed, controllerAttributes, actionAttributes);
     }
@@ -119,7 +122,7 @@ public class PermitMiddlewareTests
     [Fact]
     public async Task ActionOnResource_WithMinimalApi()
     {
-        await RunMiddlewareAsync(true, endpointMetadata: [SuccessTestData]);
+        await RunMiddlewareAsync(endpointMetadata: [SuccessTestData]);
     }
     
     [Fact]
@@ -189,41 +192,21 @@ public class PermitMiddlewareTests
             },
             new object?[]
             {
-                "Any controller attribute: true",
-                true, new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }, null
+                "Multi action on controller: true",
+                false,  new[] { SuccessTestMultiAttribute }, null
             },
             new object?[]
             {
-                "Any controller attribute: false",
-                false, new[] { new PermitAnyAttribute(FailTestData, FailTestData) }, null
+                "Multi action on controller: false",
+                false,  new[] { FailTestMultiAttribute }, null
             },
-            new object?[]
-            {
-                "Any action attribute: true",
-                true, null, new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }
-            },
-            new object?[]
-            {
-                "Any action attribute: false",
-                false, null, new[] { new PermitAnyAttribute(FailTestData, FailTestData) }
-            },
-            new object?[]
-            {
-                "Any mixed attribute: true",
-                true,  new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }, new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }
-            },
-            new object?[]
-            {
-                "Any mixed attribute: false",
-                false,  new[] { new PermitAnyAttribute(FailTestData, SuccessTestData) }, new[] { new PermitAnyAttribute(FailTestData, FailTestData) }
-            }
         };
 
     private async Task RunMiddlewareAsync(
         bool expected = true,
-        PermitMetadataAttribute[]? controllerAttributes = null,
-        PermitMetadataAttribute[]? actionAttributes = null,
-        IPermitMetadata[]? endpointMetadata = null,
+        PermitAttribute[]? controllerAttributes = null,
+        PermitAttribute[]? actionAttributes = null,
+        IPermitData[]? endpointMetadata = null,
         PermitOptions? options = null,
         string userIdClaimType = UserIdClaimTypes.NameIdentifier,
         string userKey = DefaultUserKey)
@@ -263,9 +246,9 @@ public class PermitMiddlewareTests
     private static DefaultHttpContext GetContext(
         bool withUser = true,
         string userIdClaimType = UserIdClaimTypes.NameIdentifier,
-        PermitMetadataAttribute[]? controllerAttributes = null,
-        PermitMetadataAttribute[]? actionAttributes = null,
-        IPermitMetadata[]? endpointMetadata = null)
+        PermitAttribute[]? controllerAttributes = null,
+        PermitAttribute[]? actionAttributes = null,
+        IPermitData[]? endpointMetadata = null)
     {
         EndpointMetadataCollection? endpointMetadataCollection = null;
         if (controllerAttributes?.Length > 0 || actionAttributes?.Length > 0)

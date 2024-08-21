@@ -1,12 +1,10 @@
-﻿using PermitSDK.AspNet.Abstractions;
-
-namespace PermitSDK.AspNet;
+﻿namespace PermitSDK.AspNet;
 
 /// <summary>
 /// Attribute to decorate controllers and actions with Permit permissions.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
-public class PermitAttribute : PermitMetadataAttribute, IPermitData
+public class PermitAttribute: Attribute, IPermitData
 {
     /// <summary>
     /// Create a Permit attribute.

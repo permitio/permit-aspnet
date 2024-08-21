@@ -5,7 +5,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Logging;
-using PermitSDK.AspNet.Abstractions;
 using PermitSDK.AspNet.Services;
 
 namespace PermitSDK.AspNet;
@@ -85,62 +84,38 @@ public sealed class PermitMiddleware
         await _next(httpContext);
     }
 
-    private static IReadOnlyList<IPermitMetadata> GetPermitMetadataList(Endpoint endpoint)
+    private static IReadOnlyList<IPermitData> GetPermitMetadataList(Endpoint endpoint)
     {
         // Minimal API
         if (endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()
             is not { } actionDescriptor)
         {
-            return endpoint.Metadata.GetOrderedMetadata<IPermitMetadata>(); 
+            return endpoint.Metadata.GetOrderedMetadata<PermitData>(); 
         }
 
         // Controller
         var controllerAttributes = actionDescriptor.ControllerTypeInfo
-            .GetCustomAttributes<PermitMetadataAttribute>(inherit: true);
+            .GetCustomAttributes<PermitAttribute>(inherit: true);
         var actionAttributes = actionDescriptor.MethodInfo
-            .GetCustomAttributes<PermitMetadataAttribute>(inherit: true);
+            .GetCustomAttributes<PermitAttribute>(inherit: true);
         return controllerAttributes.Concat(actionAttributes).ToArray();
     }
 
-    private async Task<bool> IsAuthorizedListAsync(HttpContext httpContext, User userKey, IEnumerable<IPermitMetadata> permitDataList)
+    private async Task<bool> IsAuthorizedListAsync(HttpContext httpContext, User userKey,
+        IEnumerable<IPermitData> permitDataList)
     {
-        // Run as AND
-        foreach (var metadata in permitDataList)
+        foreach (var data in permitDataList)
         {
-            if (metadata is IPermitData data)
+
+            var isAuthorised = await IsAuthorizedAsync(httpContext, data, userKey);
+            if (!isAuthorised)
             {
-                var isAuthorised = await IsAuthorizedAsync(httpContext, data, userKey);
-                if (!isAuthorised)
-                {
-                    return false;
-                }
+                return false;
             }
-            // Run as OR
-            else if (metadata is IPermitAnyData anyData)
-            {
-                var isAuthorised = await IsAnyAuthorisedAsync(httpContext, userKey, anyData);
-                if (!isAuthorised)
-                {
-                    return false;
-                }
-            }
+
         }
 
         return true;
-    }
-
-    private async Task<bool> IsAnyAuthorisedAsync(HttpContext httpContext, User userKey, IPermitAnyData anyData)
-    {
-        foreach (var policy in anyData.Policies)
-        {
-            var isAuthorised = await IsAuthorizedAsync(httpContext, policy, userKey);
-            if (isAuthorised)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private async Task<User?> GetUserKeyAsync(HttpContext httpContext)
@@ -191,9 +166,27 @@ public sealed class PermitMiddleware
 
         var resourceInputBuilder = _resourceInputBuilderFactory();
         var resourceInput = await resourceInputBuilder.BuildAsync(data, httpContext);
+        if (resourceInput == null)
+        {
+            return false;
+        }
+        
+        var actions = data.Action.Split(',');
+        foreach (var action in actions)
+        {
+            var isAllowed = await IsAllowedAsync(action, resourceInput, userKey);
+            if (isAllowed)
+            {
+                return true;
+            }
+        }
 
-        // Call PDP
-        var request = new AuthorizationQuery(data.Action, null, resourceInput, null, userKey);
+        return false;
+    }
+
+    private async Task<bool> IsAllowedAsync(string action, Resource resourceInput, User userKey)
+    {
+        var request = new AuthorizationQuery(action, null, resourceInput, null, userKey);
         var response = await _pdpService.AllowedAsync(request);
         if (response.Debug is JsonElement debugNode &&
             debugNode.TryGetProperty("rbac", out var rbacNode) &&

@@ -1,5 +1,3 @@
-using PermitSDK.AspNet.Abstractions;
-
 namespace PermitSDK.AspNet;
 
 /// <inheritdoc cref="IPermitData" />

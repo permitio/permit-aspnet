@@ -1,9 +1,9 @@
-namespace PermitSDK.AspNet.Abstractions;
+namespace PermitSDK.AspNet;
 
 /// <summary>
 /// Describe how a resource is protected 
 /// </summary>
-public interface IPermitData: IPermitMetadata
+public interface IPermitData
 {
     /// <summary>
     /// Get the key of the resource action

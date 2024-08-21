@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Reflection;
-using PermitSDK.AspNet.Abstractions;
 
 namespace PermitSDK.AspNet.Tests.Mock;
 
@@ -8,7 +7,7 @@ public class FakeTypeInfo : TypeInfo
 {
     private readonly object[] _attributes;
 
-    public FakeTypeInfo(params PermitMetadataAttribute[] attributes)
+    public FakeTypeInfo(params PermitAttribute[] attributes)
     {
         _attributes = attributes;
     }

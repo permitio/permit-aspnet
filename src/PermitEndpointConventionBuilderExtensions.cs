@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Builder;
-using PermitSDK.AspNet.Abstractions;
 
 namespace PermitSDK.AspNet;
 
@@ -50,28 +49,6 @@ public static class PermitEndpointConventionBuilderExtensions
             throw new ArgumentNullException(nameof(builder));
         }
 
-        builder.Add(endpointBuilder => { endpointBuilder.Metadata.Add(data); });
-        return builder;
-    }
-
-    /// <summary>
-    /// Add Permit authorization to the endpoint.
-    /// The check pass if any of the policies are satisfied.
-    /// </summary>
-    /// <param name="builder"></param>
-    /// <param name="dataList">The list of checks to perform.</param>
-    /// <typeparam name="TBuilder"></typeparam>
-    /// <returns></returns>
-    /// <exception cref="ArgumentNullException"></exception>
-    public static TBuilder RequirePermitAny<TBuilder>(this TBuilder builder,
-        params PermitData[] dataList) where TBuilder : IEndpointConventionBuilder
-    {
-        if (builder == null)
-        {
-            throw new ArgumentNullException(nameof(builder));
-        }
-
-        var data = new PermitAnyAttribute(dataList);
         builder.Add(endpointBuilder => { endpointBuilder.Metadata.Add(data); });
         return builder;
     }
