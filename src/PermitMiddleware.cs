@@ -69,37 +69,53 @@ public sealed class PermitMiddleware
             return;
         }
 
-        var permitMedata = GetPermitEndpointMetadata(endpoint);
-        foreach (var data in permitMedata)
+        var permitMetadataList = GetPermitMetadataList(endpoint);
+        if (permitMetadataList.Count > 0)
         {
-            var controllerPermitted = await IsAuthorizedAsync(httpContext, data, userKey);
-            if (controllerPermitted) continue;
-            httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-            return;
+
+            var isEndpointAuthorized = await IsAuthorizedListAsync(httpContext, userKey, permitMetadataList);
+            if (!isEndpointAuthorized)
+            {
+                httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                return;
+            }
         }
 
         await _next(httpContext);
     }
 
-    private static IEnumerable<IPermitData> GetPermitEndpointMetadata(Endpoint endpoint)
+    private static IReadOnlyList<IPermitData> GetPermitMetadataList(Endpoint endpoint)
     {
-        var permitData = endpoint.Metadata.GetOrderedMetadata<IPermitData>();
-        if (permitData.Any())
-        {
-            return permitData;
-        }
-
+        // Minimal API
         if (endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()
             is not { } actionDescriptor)
         {
-            return Array.Empty<IPermitData>();
+            return endpoint.Metadata.GetOrderedMetadata<PermitData>(); 
         }
 
+        // Controller
         var controllerAttributes = actionDescriptor.ControllerTypeInfo
             .GetCustomAttributes<PermitAttribute>(inherit: true);
         var actionAttributes = actionDescriptor.MethodInfo
             .GetCustomAttributes<PermitAttribute>(inherit: true);
         return controllerAttributes.Concat(actionAttributes).ToArray();
+    }
+
+    private async Task<bool> IsAuthorizedListAsync(HttpContext httpContext, User userKey,
+        IEnumerable<IPermitData> permitDataList)
+    {
+        foreach (var data in permitDataList)
+        {
+
+            var isAuthorised = await IsAuthorizedAsync(httpContext, data, userKey);
+            if (!isAuthorised)
+            {
+                return false;
+            }
+
+        }
+
+        return true;
     }
 
     private async Task<User?> GetUserKeyAsync(HttpContext httpContext)
@@ -150,11 +166,29 @@ public sealed class PermitMiddleware
 
         var resourceInputBuilder = _resourceInputBuilderFactory();
         var resourceInput = await resourceInputBuilder.BuildAsync(data, httpContext);
+        if (resourceInput == null)
+        {
+            return false;
+        }
+        
+        var actions = data.Action.Split(',');
+        foreach (var action in actions)
+        {
+            var isAllowed = await IsAllowedAsync(action, resourceInput, userKey);
+            if (isAllowed)
+            {
+                return true;
+            }
+        }
 
-        // Call PDP
-        var request = new AuthorizationQuery(data.Action, null, resourceInput, null, userKey);
+        return false;
+    }
+
+    private async Task<bool> IsAllowedAsync(string action, Resource resourceInput, User userKey)
+    {
+        var request = new AuthorizationQuery(action, null, resourceInput, null, userKey);
         var response = await _pdpService.AllowedAsync(request);
-        if (response?.Debug is JsonElement debugNode &&
+        if (response.Debug is JsonElement debugNode &&
             debugNode.TryGetProperty("rbac", out var rbacNode) &&
             rbacNode.TryGetProperty("reason", out var reasonNode))
         {
@@ -162,6 +196,6 @@ public sealed class PermitMiddleware
             _logger.LogDebug("RBAC reason: {Reason}", reason); // response.Debug.Rbac.Reason);
         }
 
-        return response?.Allow ?? false;
+        return response.Allow ?? false;
     }
 }

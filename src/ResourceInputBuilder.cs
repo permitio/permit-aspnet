@@ -5,23 +5,16 @@ using PermitSDK.AspNet.Services;
 
 namespace PermitSDK.AspNet;
 
-internal class ResourceInputBuilder : IResourceInputBuilder
+internal class ResourceInputBuilder(PermitOptions options) : IResourceInputBuilder
 {
-    private readonly PermitOptions _options;
     private bool _isFailed;
     private string? _resourceKey;
-    private string? _tenant;
+    private string? _tenant = options.UseDefaultTenantIfEmpty
+        ? options.DefaultTenant
+        : null;
     private Dictionary<string, object>? _attributes;
     private Dictionary<string, object>? _context;
-
-    public ResourceInputBuilder(
-        PermitOptions options)
-    {
-        _options = options;
-        _tenant = options.UseDefaultTenantIfEmpty
-            ? options.DefaultTenant
-            : null;
-    }
+    private static readonly char[] JsonSeparator = ['.'];
 
     public async Task<Resource?> BuildAsync(IPermitData data, HttpContext httpContext)
     {
@@ -52,7 +45,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.ResourceKeyFromClaim,
                 data.ResourceKeyFromBody,
                 data.ResourceKeyProviderType,
-                _options.GlobalResourceKeyProviderType);
+                options.GlobalResourceKeyProviderType);
 
             if (isSpecified && resourceKey == null)
             {
@@ -79,7 +72,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 data.TenantFromClaim,
                 data.TenantFromBody,
                 data.TenantProviderType,
-                _options.GlobalTenantProviderType);
+                options.GlobalTenantProviderType);
 
             if (isSpecified && tenant == null)
             {
@@ -151,12 +144,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
         async Task TryAppendAttributesAsync()
         {
-            if (_isFailed || (data.AttributesProviderType == null && _options.GlobalAttributesProviderType == null))
+            if (_isFailed || (data.AttributesProviderType == null && options.GlobalAttributesProviderType == null))
             {
                 return;
             }
 
-            var providerType = data.AttributesProviderType ?? _options.GlobalAttributesProviderType;
+            var providerType = data.AttributesProviderType ?? options.GlobalAttributesProviderType;
             var attributes = await httpContext.GetProviderValues(providerType!);
             if (attributes == null)
             {
@@ -170,12 +163,12 @@ internal class ResourceInputBuilder : IResourceInputBuilder
 
         async Task TryAppendContextAsync()
         {
-            if (_isFailed || (data.ContextProviderType == null && _options.GlobalContextProviderType == null))
+            if (_isFailed || (data.ContextProviderType == null && options.GlobalContextProviderType == null))
             {
                 return;
             }
 
-            var providerType = data.ContextProviderType ?? _options.GlobalContextProviderType;
+            var providerType = data.ContextProviderType ?? options.GlobalContextProviderType;
             var context = await httpContext.GetProviderValues(providerType!);
             if (context == null)
             {
@@ -233,7 +226,7 @@ internal class ResourceInputBuilder : IResourceInputBuilder
                 return default;
             }
 
-            var segments = path.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+            var segments = path.Split(JsonSeparator, StringSplitOptions.RemoveEmptyEntries);
             foreach (var t in segments)
             {
                 jsonElement = jsonElement.TryGetProperty(t, out var value) ? value : default;

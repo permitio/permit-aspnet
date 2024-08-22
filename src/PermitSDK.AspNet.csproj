@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
@@ -9,8 +9,8 @@
         <WarningsAsErrors>$(WarningsAsErrors);1591</WarningsAsErrors>
         <Authors>Matteo Bortolazzo</Authors>
         <RepositoryUrl>https://github.com/permitio/permit-aspnet</RepositoryUrl>
-        <Version>1.2.0</Version>
-        <PackageReleaseNotes>Add Callback before any request to PDP and fix issue while resolving the service for custom providers</PackageReleaseNotes>
+        <Version>2.0.0</Version>
+        <PackageReleaseNotes>Move to NET8 and support OR operation to [Permit] attribute.</PackageReleaseNotes>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
     </PropertyGroup>
@@ -22,5 +22,9 @@
     <ItemGroup>
         <None Include="..\README.md" Pack="true" PackagePath="\"/>
         <None Include="..\LICENSE" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Abstractions\" />
     </ItemGroup>
 </Project>
