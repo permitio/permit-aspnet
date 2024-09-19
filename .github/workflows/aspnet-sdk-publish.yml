@@ -1,8 +1,8 @@
 name: Publish to NuGet
 
-on: push
-  # release:
-  #   types: [published]
+on:
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -31,14 +31,12 @@ jobs:
 
       - name: Update version in .csproj
         run: |
-          #sed -i 's|<Version>.*</Version>|<Version>${{ github.event.release.tag_name }}</Version>|' ./src/PermitSDK.AspNet.csproj
-          sed -i 's|<Version>.*</Version>|<Version>1.1.1</Version>|' ./src/PermitSDK.AspNet.csproj
+          sed -i 's|<Version>.*</Version>|<Version>${{ github.event.release.tag_name }}</Version>|' ./src/PermitSDK.AspNet.csproj
           cat ./src/PermitSDK.AspNet.csproj 
           
-      # - name: Publish to Nuget
-      #   id: publish_nuget
-      #   uses: brandedoutcast/publish-nuget@v2
-      #   with:
-      #     # Filepath of the project to be packaged, relative to root of repository
-      #     PROJECT_FILE_PATH: src/PermitSDK.AspNet.csproj
-      #     NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
+      - name: Publish to Nuget
+        id: publish_nuget
+        uses: brandedoutcast/publish-nuget@v2
+        with:
+          PROJECT_FILE_PATH: src/PermitSDK.AspNet.csproj
+          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
