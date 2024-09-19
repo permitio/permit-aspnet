@@ -31,7 +31,8 @@ jobs:
 
       - name: Update version in .csproj
         run: |
-          sed -i 's|<Version>.*</Version>|<Version>${{ github.event.release.tag_name }}</Version>|' ./src/PermitSDK.AspNet.csproj
+          #sed -i 's|<Version>.*</Version>|<Version>${{ github.event.release.tag_name }}</Version>|' ./src/PermitSDK.AspNet.csproj
+          sed -i 's|<Version>.*</Version>|<Version>1.1.1</Version>|' ./src/PermitSDK.AspNet.csproj
           cat ./src/PermitSDK.AspNet.csproj 
           
       # - name: Publish to Nuget
