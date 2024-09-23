@@ -1,0 +1,42 @@
+name: Publish to NuGet
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET Core SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        working-directory: ./src
+        run: dotnet restore
+
+      - name: Build project
+        working-directory: ./src
+        run: dotnet build --configuration Release
+      
+      - name: Tests
+        working-directory: ./tests/PermitSDK.AspNet.Tests
+        run: dotnet test --configuration Release
+
+      - name: Update version in .csproj
+        run: |
+          sed -i 's|<Version>.*</Version>|<Version>${{ github.event.release.tag_name }}</Version>|' ./src/PermitSDK.AspNet.csproj
+          cat ./src/PermitSDK.AspNet.csproj 
+          
+      - name: Publish to Nuget
+        id: publish_nuget
+        uses: brandedoutcast/publish-nuget@v2
+        with:
+          PROJECT_FILE_PATH: src/PermitSDK.AspNet.csproj
+          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
