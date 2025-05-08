@@ -1,3 +1,7 @@
+# NOTE: Unoffical SDK / DEPRECATED
+This SDK was contributed by a Permit.io customer, but is no longer under active development, please use [.Net](https://github.com/permitio/permit-dotnet) SDK instead.
+
+
 # Permit AspNet
 
 Easily protect APIs with Permit.io via attributes!
